@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option csharp_namespace = "MovieTicketBookingApi.Protos.Movies";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+package movieTicketBookingApi.protos.movies;
+
+service Movies {
+	rpc GetAll (GetAllMoviesRequest) returns (GetAllMoviesReply) {
+		option (google.api.http) = {
+			get: "/v1/movies"
+		};
+	}
+
+	rpc GetById (GetMovieByIdRequest) returns (GetMovieByIdReply) {
+		option (google.api.http) = {
+			get: "/v1/movies/{id}"
+		};
+	}
+}
+
+message GetMovieByIdRequest {
+	string id = 1;
+}
+
+message GetAllMoviesRequest {
+	string test = 1;
+}
+
+message GetAllMoviesReply {
+	repeated Movie movies = 1;
+}
+
+message GetMovieByIdReply {
+	string id = 1;
+	string title = 2;
+	repeated MovieSession movie_sessions = 3;
+}
+
+message Movie {
+	string id = 1;
+	string title = 2;
+	repeated MovieSession movie_sessions = 3;
+}
+
+message MovieSession {
+	string id = 1;
+	google.protobuf.Timestamp dateTime = 2; 
+}
