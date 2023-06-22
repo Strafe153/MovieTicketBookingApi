@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package movie_ticket_booking_api.empty;
+
+option csharp_namespace = "MovieTicketBookingApi.Protos.Empty";
+
+message EmptyReply {
+
+}

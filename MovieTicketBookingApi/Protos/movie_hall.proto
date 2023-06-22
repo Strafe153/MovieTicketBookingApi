@@ -1,0 +1,88 @@
+﻿syntax = "proto3";
+
+package movie_ticket_booking_api.movie_hall;
+
+option csharp_namespace = "MovieTicketBookingApi.Protos.MovieHalls";
+
+import "google/api/annotations.proto";
+import "Protos/movie_session.proto";
+import "Protos/empty.proto";
+import "Protos/paging.proto";
+
+service MovieHalls {
+	rpc GetAll (paging.GetPaginatedDataRequest) returns (GetAllMovieHallsReply) {
+		option (google.api.http) = {
+			get: "/v1/movieHalls"
+		};
+	}
+
+	rpc GetById (GetMovieHallByIdRequest) returns (GetMovieHallByIdReply) {
+		option (google.api.http) = {
+			get: "/v1/movieHalls/{id}"
+		};
+	}
+
+	rpc Create (CreateMovieHallRequest) returns (CreateMovieHallReply) {
+		option (google.api.http) = {
+			post: "/v1/movieHalls",
+			body: "*"
+		};
+	}
+
+	rpc Update (UpdateMovieHallRequest) returns (empty.EmptyReply) {
+		option (google.api.http) = {
+			put: "/v1/movieHalls/{id}",
+			body: "*"
+		};
+	}
+
+	rpc Delete (DeleteMovieHallRequest) returns (empty.EmptyReply) {
+		option (google.api.http) = {
+			delete: "/v1/movieHalls/{id}"
+		};
+	}
+}
+
+message GetAllMovieHallsReply {
+	repeated MovieHall movie_halls = 1;
+}
+
+message GetMovieHallByIdRequest {
+	string id = 1;
+}
+
+message GetMovieHallByIdReply {
+	string id = 1;
+	string name = 2;
+	int32 number_of_seats = 3;
+	repeated movie_session.MovieSession movie_sessions = 4;
+}
+
+message CreateMovieHallRequest {
+	string name = 1;
+	int32 number_of_seats = 2;
+}
+
+message CreateMovieHallReply {
+	string id = 1;
+	string name = 2;
+	int32 number_of_seats = 3;
+	repeated movie_session.MovieSession movie_sessions = 4;
+}
+
+message UpdateMovieHallRequest {
+	string id = 1;
+	string name = 2;
+	int32 number_of_seats = 3;
+}
+
+message DeleteMovieHallRequest {
+	string id = 1;
+}
+
+message MovieHall {
+	string id = 1;
+	string name = 2;
+	int32 number_of_seats = 3;
+	repeated movie_session.MovieSession movie_sessions = 4;
+}

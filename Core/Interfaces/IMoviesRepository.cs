@@ -2,8 +2,6 @@
 
 namespace Core.Interfaces;
 
-public interface IMoviesRepository
+public interface IMoviesRepository : IRepository<Movie>
 {
-    Task<IList<Movie>> GetAll();
-    Task<Movie?> GetById(Guid id);
 }

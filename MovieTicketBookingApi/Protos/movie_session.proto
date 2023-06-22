@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package movie_ticket_booking_api.movie_session;
+
+option csharp_namespace = "MovieTicketBookingApi.Protos.MovieSessions";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "Protos/ticket.proto";
+import "Protos/empty.proto";
+import "Protos/paging.proto";
+
+service MovieSessions {
+	rpc GetAll (paging.GetPaginatedDataRequest) returns (GetAllMovieSessionsReply) {
+		option (google.api.http) = {
+			get: "/v1/movieSessions"
+		};
+	}
+
+	rpc GetById (GetMovieSessionByIdRequest) returns (GetMovieSessionByIdReply) {
+		option (google.api.http) = {
+			get: "/v1/movieSessions/{id}"
+		};
+	}
+
+	rpc Create (CreateMovieSessionRequest) returns (CreateMovieSessionReply) {
+		option (google.api.http) = {
+			post: "/v1/movieSessions",
+			body: "*"
+		};
+	}
+
+	rpc Update (UpdateMovieSessionRequest) returns (empty.EmptyReply) {
+		option (google.api.http) = {
+			put: "/v1/movieSessions/{id}",
+			body: "*"
+		};
+	}
+
+	rpc Delete (DeleteMovieSessionRequest) returns (empty.EmptyReply) {
+		option (google.api.http) = {
+			delete: "/v1/movieSessions/{id}"
+		};
+	}
+}
+
+message GetAllMovieSessionsReply {
+	repeated MovieSession movie_sessions = 1;
+}
+
+message GetMovieSessionByIdRequest {
+	string id = 1;
+}
+
+message GetMovieSessionByIdReply {
+	string id = 1;
+	google.protobuf.Timestamp date_time = 2;
+	string movie_id = 3;
+	string movie_hall_id = 4;
+	repeated ticket.Ticket tickets = 5;
+}
+
+message CreateMovieSessionRequest {
+	google.protobuf.Timestamp date_time = 1;
+	int32 number_of_seats = 2;
+	string movie_id = 3;
+	string movie_hall_id = 4;
+}
+
+message CreateMovieSessionReply {
+	string id = 1;
+	google.protobuf.Timestamp date_time = 2;
+	string movie_id = 3;
+	string movie_hall_id = 4;
+}
+
+message UpdateMovieSessionRequest {
+	string id = 1;
+	google.protobuf.Timestamp date_time = 2;
+	int32 number_of_seats = 3;
+	string movie_id = 4;
+	string movie_hall_id = 5;
+}
+
+message DeleteMovieSessionRequest {
+	string id = 1;
+}
+
+message MovieSession {
+	string id = 1;
+	google.protobuf.Timestamp date_time = 2;
+	string movie_id = 3;
+	string movie_hall_id = 4;
+	ticket.Ticket tickets = 5;
+}

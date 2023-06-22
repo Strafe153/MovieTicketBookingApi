@@ -8,5 +8,8 @@ public static class RepositoryConfiguration
     public static void ConfigureRepositories(this IServiceCollection services)
     {
         services.AddScoped<IMoviesRepository, MoviesRepository>();
+        services.AddScoped<IMovieHallsRepository, MovieHallsRepository>();
+        services.AddScoped<IMovieSessionsRepository, MovieSessionsRepository>();
+        services.AddScoped<ITicketsRepository, TicketsRepository>();
     }
 }

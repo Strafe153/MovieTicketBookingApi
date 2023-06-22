@@ -2,8 +2,8 @@ version: '3.9'
 
 services:
   oracle:
+    image: container-registry.oracle.com/database/free:latest
     container_name: oracle
-    image: container-registry.oracle.com/database/express:latest
     ports:
       - 1521:1521
       - 5500:5500
@@ -11,11 +11,15 @@ services:
       - ORACLE_SID=XE
       - ORACLE_PDB=XEPDB1
       - ORACLE_PWD=pas5w0rd!
-      - ORACLE_PASSWORD=pas5w0rd!
+      - ORACLE_CHARACTERSET=AL32UTF8
     volumes:
-      - ./data:/opt/oracle/oradata
+      - oracle-data:/opt/oracle/oradata
     networks:
       - oracle-network
 
 networks:
   oracle-network:
+
+volumes:
+  oracle-data:
+    driver: local

@@ -7,7 +7,18 @@
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+    <NoWarn>1701;1702;1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>full</DebugType>
+    <NoWarn>1701;1702;1591</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.54.0" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="7.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.Swagger" Version="0.3.7" />
@@ -22,8 +33,13 @@
     <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
   </ItemGroup>
 
-	<ItemGroup>
-		<Protobuf Include="Protos\movie.proto" GrpcServices="server" />
-	</ItemGroup>
+  <ItemGroup>
+	<Protobuf Include="Protos\movie.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\movie_hall.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\movie_session.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\ticket.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\empty.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\paging.proto" GrpcServices="server" />
+  </ItemGroup>
 
 </Project>

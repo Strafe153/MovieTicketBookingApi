@@ -13,9 +13,25 @@ public class MoviesRepository : IMoviesRepository
         _context = context;
     }
 
-    public async Task<IList<Movie>> GetAll() =>
-        await _context.Movies.ToListAsync();
+    public Movie Create(Movie entity) =>
+        _context.Movies.Add(entity).Entity;
 
-    public async Task<Movie?> GetById(Guid id) =>
-        await _context.Movies.FirstOrDefaultAsync(m => m.Id == id);
+    public void Delete(Movie entity) =>
+        _context.Movies.Remove(entity);
+
+    public async Task<IList<Movie>> GetAllAsync() =>
+        await _context.Movies
+            .Include(m => m.MovieSessions)
+            .ToListAsync();
+
+    public async Task<Movie?> GetByIdAsync(Guid id) =>
+        await _context.Movies
+            .Include(m => m.MovieSessions)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+    public async Task SaveChangesAsync() =>
+        await _context.SaveChangesAsync();
+
+    public void Update(Movie entity) =>
+        _context.Movies.Update(entity);
 }

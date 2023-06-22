@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package movie_ticket_booking_api.ticket;
+
+option csharp_namespace = "MovieTicketBookingApi.Protos.Tickets";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "Protos/empty.proto";
+import "Protos/paging.proto";
+
+service Tickets {
+	rpc GetAll (paging.GetPaginatedDataRequest) returns (GetAllTicketsReply) {
+		option (google.api.http) = {
+			get: "/v1/tickets"
+		};
+	}
+
+	rpc GetById (GetTicketByIdRequest) returns (GetTicketByIdReply) {
+		option (google.api.http) = {
+			get: "/v1/tickets/{id}"
+		};
+	}
+
+	rpc Create (CreateTicketRequest) returns (CreateTicketReply) {
+		option (google.api.http) = {
+			post: "/v1/tickets",
+			body: "*"
+		};
+	}
+
+	rpc Delete (DeleteTicketRequest) returns (empty.EmptyReply) {
+		option (google.api.http) = {
+			delete: "/v1/tickets/{id}"
+		};
+	}
+}
+
+message GetAllTicketsReply {
+	repeated Ticket tickets = 1;
+}
+
+message GetTicketByIdRequest {
+	string id = 1;
+}
+
+message GetTicketByIdReply {
+	string id = 1;
+	google.protobuf.Timestamp date_time = 2;
+	int32 seat_number = 3;
+	string movie_session_id = 4;
+	string user_id = 5;
+}
+
+message CreateTicketRequest {
+	google.protobuf.Timestamp date_time = 1;
+	int32 seat_number = 2;
+	string movie_session_id = 3;
+	string user_id = 4;
+}
+
+message CreateTicketReply {
+	string id = 1;
+	google.protobuf.Timestamp date_time = 2;
+	int32 seat_number = 3;
+	string movie_session_id = 4;
+	string user_id = 5;
+}
+
+message DeleteTicketRequest {
+	string id = 1;
+}
+
+message Ticket {
+	string id = 1;
+	google.protobuf.Timestamp date_time = 2;
+	int32 seat_number = 3;
+	string movie_session_id = 4;
+	string user_id = 5;
+}

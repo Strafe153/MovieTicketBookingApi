@@ -1,14 +1,16 @@
 syntax = "proto3";
 
+package movie_ticket_booking_api.movie;
+
 option csharp_namespace = "MovieTicketBookingApi.Protos.Movies";
 
 import "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
-
-package movieTicketBookingApi.protos.movies;
+import "Protos/movie_session.proto";
+import "Protos/empty.proto";
+import "Protos/paging.proto";
 
 service Movies {
-	rpc GetAll (GetAllMoviesRequest) returns (GetAllMoviesReply) {
+	rpc GetAll (paging.GetPaginatedDataRequest) returns (GetAllMoviesReply) {
 		option (google.api.http) = {
 			get: "/v1/movies"
 		};
@@ -19,33 +21,79 @@ service Movies {
 			get: "/v1/movies/{id}"
 		};
 	}
-}
 
-message GetMovieByIdRequest {
-	string id = 1;
-}
+	rpc Create (CreateMovieRequest) returns (CreateMovieReply) {
+		option (google.api.http) = {
+			post: "/v1/movies",
+			body: "*"
+		};
+	}
 
-message GetAllMoviesRequest {
-	string test = 1;
+	rpc Update (UpdateMovieRequest) returns (empty.EmptyReply) {
+		option (google.api.http) = {
+			put: "/v1/movies/{id}",
+			body: "*"
+		};
+	}
+
+	rpc Delete (DeleteMovieRequest) returns (empty.EmptyReply) {
+		option (google.api.http) = {
+			delete: "/v1/movies/{id}"
+		};
+	}
 }
 
 message GetAllMoviesReply {
 	repeated Movie movies = 1;
 }
 
+message GetMovieByIdRequest {
+	string id = 1;
+}
+
 message GetMovieByIdReply {
 	string id = 1;
 	string title = 2;
-	repeated MovieSession movie_sessions = 3;
+	repeated movie_session.MovieSession movie_sessions = 3;
+}
+
+message CreateMovieRequest {
+	string title = 1;
+	int32 duration_in_minutes = 2;
+	AgeRating age_rating = 3;
+}
+
+message CreateMovieReply {
+	string id = 1;
+	string title = 2;
+	int32 duration_in_minutes = 3;
+	AgeRating age_rating = 4;
+}
+
+message UpdateMovieRequest {
+	string id = 1;
+	string title = 2;
+	int32 duration_in_minutes = 3;
+	AgeRating age_rating = 4;
+}
+
+message DeleteMovieRequest {
+	string id = 1;
 }
 
 message Movie {
 	string id = 1;
 	string title = 2;
-	repeated MovieSession movie_sessions = 3;
+	int32 duration_in_minutes = 3;
+	AgeRating age_rating = 4;
+	repeated movie_session.MovieSession movie_sessions = 5;
 }
 
-message MovieSession {
-	string id = 1;
-	google.protobuf.Timestamp dateTime = 2; 
+enum AgeRating {
+	G = 0;
+	PG = 1;
+	PG13 = 2;
+    R = 3;
+    NC17 = 4;
+    NR = 5;
 }

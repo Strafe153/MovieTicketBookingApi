@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package movie_ticket_booking_api.paging;
+
+option csharp_namespace = "MovieTicketBookingApi.Protos.Paging";
+
+message GetPaginatedDataRequest {
+	int32 page_number = 1;
+	int32 page_size = 2;
+}
