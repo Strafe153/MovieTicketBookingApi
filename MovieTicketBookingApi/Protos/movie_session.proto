@@ -4,11 +4,11 @@ package movie_ticket_booking_api.movie_session;
 
 option csharp_namespace = "MovieTicketBookingApi.Protos.MovieSessions";
 
-import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
 import "Protos/ticket.proto";
-import "Protos/empty.proto";
-import "Protos/paging.proto";
+import "Protos/Shared/empty.proto";
+import "Protos/Shared/paging.proto";
 
 service MovieSessions {
 	rpc GetAll (paging.GetPaginatedDataRequest) returns (GetAllMovieSessionsReply) {
