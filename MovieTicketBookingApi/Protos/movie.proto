@@ -43,6 +43,15 @@ service Movies {
 	}
 }
 
+enum AgeRating {
+	G = 0;
+	PG = 1;
+	PG13 = 2;
+    R = 3;
+    NC17 = 4;
+    NR = 5;
+}
+
 message GetAllMoviesReply {
 	repeated Movie movies = 1;
 }
@@ -87,13 +96,4 @@ message Movie {
 	int32 duration_in_minutes = 3;
 	AgeRating age_rating = 4;
 	repeated movie_session.MovieSession movie_sessions = 5;
-}
-
-enum AgeRating {
-	G = 0;
-	PG = 1;
-	PG13 = 2;
-    R = 3;
-    NC17 = 4;
-    NR = 5;
 }

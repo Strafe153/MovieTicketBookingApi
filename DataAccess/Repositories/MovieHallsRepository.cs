@@ -1,6 +1,7 @@
 ﻿using Core.Entities;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace DataAccess.Repositories;
 
@@ -19,10 +20,17 @@ public class MovieHallsRepository : IMovieHallsRepository
     public void Delete(MovieHall entity) =>
         _context.MovieHalls.Remove(entity);
 
-    public async Task<IList<MovieHall>> GetAllAsync() =>
-        await _context.MovieHalls
+    public async Task<IList<MovieHall>> GetAllAsync(int? pageNumber, int? pageSize)
+    {
+        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 1;
+        var pageLimit = pageSize.HasValue ? pageSize.Value : 5;
+
+        return await _context.MovieHalls
             .Include(mh => mh.MovieSessions)
+            .Skip((pageIndex - 1) * pageLimit)
+            .Take(pageLimit)
             .ToListAsync();
+    }
 
     public async Task<MovieHall?> GetByIdAsync(Guid id) =>
         await _context.MovieHalls

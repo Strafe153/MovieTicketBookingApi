@@ -10,18 +10,21 @@ namespace MovieTicketBookingApi.Services;
 public class MoviesService : Movies.MoviesBase
 {
     private readonly IMoviesRepository _moviesRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public MoviesService(
         IMoviesRepository moviesRepository,
+        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _moviesRepository = moviesRepository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public override async Task<GetAllMoviesReply> GetAll(GetPaginatedDataRequest request, ServerCallContext context) =>
-        _mapper.Map<GetAllMoviesReply>(await _moviesRepository.GetAllAsync());
+        _mapper.Map<GetAllMoviesReply>(await _moviesRepository.GetAllAsync(request.PageNumber, request.PageSize));
 
     public override async Task<GetMovieByIdReply> GetById(GetMovieByIdRequest request, ServerCallContext context)
     {
@@ -38,7 +41,7 @@ public class MoviesService : Movies.MoviesBase
     public override async Task<CreateMovieReply> Create(CreateMovieRequest request, ServerCallContext context)
     {
         var movie = _moviesRepository.Create(_mapper.Map<Core.Entities.Movie>(request));
-        await _moviesRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<CreateMovieReply>(movie);
     }
@@ -54,7 +57,7 @@ public class MoviesService : Movies.MoviesBase
 
         _mapper.Map(request, movie);
         _moviesRepository.Update(movie);
-        await _moviesRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return new EmptyReply();
     }
@@ -69,7 +72,7 @@ public class MoviesService : Movies.MoviesBase
         }
 
         _moviesRepository.Delete(movie);
-        await _moviesRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return new EmptyReply();
     }

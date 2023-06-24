@@ -4,7 +4,9 @@ package movie_ticket_booking_api.paging;
 
 option csharp_namespace = "MovieTicketBookingApi.Protos.Paging";
 
+import "google/protobuf/wrappers.proto";
+
 message GetPaginatedDataRequest {
-	int32 page_number = 1;
-	int32 page_size = 2;
+	google.protobuf.Int32Value page_number = 1;
+	google.protobuf.Int32Value page_size = 2;
 }
