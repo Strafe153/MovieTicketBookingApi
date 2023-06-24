@@ -1,6 +1,7 @@
 ﻿using Core.Entities;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace DataAccess.Repositories;
 
@@ -19,14 +20,19 @@ public class TicketsRepository : ITicketsRepository
     public void Delete(Ticket entity) =>
         _context.Tickets.Remove(entity);
 
-    public async Task<IList<Ticket>> GetAllAsync() =>
-        await _context.Tickets.ToListAsync();
+    public async Task<IList<Ticket>> GetAllAsync(int? pageNumber, int? pageSize)
+    {
+        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 1;
+        var pageLimit = pageSize.HasValue ? pageSize.Value : 5;
+
+        return await _context.Tickets
+            .Skip((pageIndex - 1) * pageLimit)
+            .Take(pageLimit)
+            .ToListAsync();
+    }
 
     public async Task<Ticket?> GetByIdAsync(Guid id) =>
         await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
-
-    public async Task SaveChangesAsync() =>
-        await _context.SaveChangesAsync();
 
     public void Update(Ticket entity) =>
         _context.Tickets.Update(entity);

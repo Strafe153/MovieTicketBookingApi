@@ -10,18 +10,21 @@ namespace MovieTicketBookingApi.Services;
 public class TicketsService : Tickets.TicketsBase
 {
     private readonly ITicketsRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public TicketsService(
         ITicketsRepository repository,
+        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _repository = repository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public override async Task<GetAllTicketsReply> GetAll(GetPaginatedDataRequest request, ServerCallContext context) =>
-        _mapper.Map<GetAllTicketsReply>(await _repository.GetAllAsync());
+        _mapper.Map<GetAllTicketsReply>(await _repository.GetAllAsync(request.PageNumber, request.PageSize));
 
     public override async Task<GetTicketByIdReply> GetById(GetTicketByIdRequest request, ServerCallContext context)
     {
@@ -38,7 +41,7 @@ public class TicketsService : Tickets.TicketsBase
     public override async Task<CreateTicketReply> Create(CreateTicketRequest request, ServerCallContext context)
     {
         var ticket = _repository.Create(_mapper.Map<Core.Entities.Ticket>(request));
-        await _repository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<CreateTicketReply>(ticket);
     }
@@ -53,7 +56,7 @@ public class TicketsService : Tickets.TicketsBase
         }
 
         _repository.Delete(ticket);
-        await _repository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return new EmptyReply();
     }
