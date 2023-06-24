@@ -10,18 +10,21 @@ namespace MovieTicketBookingApi.Services;
 public class MovieSessionsService : MovieSessions.MovieSessionsBase
 {
     private readonly IMovieSessionsRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public MovieSessionsService(
         IMovieSessionsRepository repository,
+        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _repository = repository;
+        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public override async Task<GetAllMovieSessionsReply> GetAll(GetPaginatedDataRequest request, ServerCallContext context) =>
-        _mapper.Map<GetAllMovieSessionsReply>(await _repository.GetAllAsync());
+        _mapper.Map<GetAllMovieSessionsReply>(await _repository.GetAllAsync(request.PageNumber, request.PageSize));
 
     public override async Task<GetMovieSessionByIdReply> GetById(GetMovieSessionByIdRequest request, ServerCallContext context)
     {
@@ -38,7 +41,7 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
     public override async Task<CreateMovieSessionReply> Create(CreateMovieSessionRequest request, ServerCallContext context)
     {
         var movieSession = _repository.Create(_mapper.Map<Core.Entities.MovieSession>(request));
-        await _repository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<CreateMovieSessionReply>(movieSession);
     }
@@ -54,7 +57,7 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
 
         _mapper.Map(request, movieSession);
         _repository.Update(movieSession);
-        await _repository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return new EmptyReply();
     }
@@ -69,7 +72,7 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
         }
 
         _repository.Delete(movieHall);
-        await _repository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
         return new EmptyReply();
     }

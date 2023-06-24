@@ -22,12 +22,11 @@ public static class MigrationsConfiguration
     private static bool CanConnect(this MovieTicketBookingContext dbContext)
     {
         var connection = dbContext.Database.GetDbConnection();
-        using var masterConnection = new OracleConnection(connection.ConnectionString);
 
         try
         {
-            masterConnection.Open();
-            masterConnection.Close();
+            connection.Open();
+            connection.Close();
         }
         catch (OracleException)
         {
