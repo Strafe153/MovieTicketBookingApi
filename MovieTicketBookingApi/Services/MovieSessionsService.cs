@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Core.Interfaces;
 using Grpc.Core;
-using MovieTicketBookingApi.Protos.Empty;
-using MovieTicketBookingApi.Protos.MovieSessions;
-using MovieTicketBookingApi.Protos.Paging;
+using MovieTicketBookingApi.Protos.Shared.Empty;
+using MovieTicketBookingApi.Protos.V1.MovieSessions;
+using MovieTicketBookingApi.Protos.Shared.Paging;
 
 namespace MovieTicketBookingApi.Services;
 

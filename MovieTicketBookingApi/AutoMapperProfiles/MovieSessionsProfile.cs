@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Google.Protobuf.WellKnownTypes;
 using MovieTicketBookingApi.Extensions;
-using MovieTicketBookingApi.Protos.MovieSessions;
+using MovieTicketBookingApi.Protos.V1.MovieSessions;
 using CoreMovieSession = Core.Entities.MovieSession;
 
 namespace MovieTicketBookingApi.AutoMapperProfiles

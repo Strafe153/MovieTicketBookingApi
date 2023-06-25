@@ -4,10 +4,10 @@ using CoreMovie = Core.Entities.Movie;
 using CoreMovieSession = Core.Entities.MovieSession;
 using CoreMovieHall = Core.Entities.MovieHall;
 using CoreTicket = Core.Entities.Ticket;
-using ProtoMovie = MovieTicketBookingApi.Protos.Movies.Movie;
-using ProtoMovieSession = MovieTicketBookingApi.Protos.MovieSessions.MovieSession;
-using ProtoMovieHall = MovieTicketBookingApi.Protos.MovieHalls.MovieHall;
-using ProtoTicket = MovieTicketBookingApi.Protos.Tickets.Ticket;
+using ProtoMovie = MovieTicketBookingApi.Protos.V1.Movies.Movie;
+using ProtoMovieSession = MovieTicketBookingApi.Protos.V1.MovieSessions.MovieSession;
+using ProtoMovieHall = MovieTicketBookingApi.Protos.V1.MovieHalls.MovieHall;
+using ProtoTicket = MovieTicketBookingApi.Protos.V1.Tickets.Ticket;
 
 namespace MovieTicketBookingApi.Extensions;
 
@@ -24,7 +24,7 @@ public static class IListExtensions
                 Id = item.Id.ToString(),
                 Title = item.Title,
                 DurationInMinutes = item.DurationInMinutes,
-                AgeRating = (Protos.Movies.AgeRating)item.AgeRating,
+                AgeRating = (Protos.V1.Movies.AgeRating)item.AgeRating,
                 MovieSessions = { item.MovieSessions.ToRepeatedField() }
             });
         }
