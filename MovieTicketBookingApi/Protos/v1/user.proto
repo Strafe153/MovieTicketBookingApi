@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package movie_ticket_booking_api.v1.user;
+
+option csharp_namespace = "MovieTicketBookingApi.Protos.V1.Users";
+
+import "google/protobuf/timestamp.proto";
+import "Protos/google/api/annotations.proto";
+import "Protos/v1/ticket.proto";
+import "Protos/shared/empty.proto";
+import "Protos/shared/paging.proto";
+
+service Users {
+	rpc GetAll (shared.paging.GetPaginatedDataRequest) returns (GetAllUsersReply) {
+		option (google.api.http) = {
+			get: "/v1/users"
+		};
+	}
+
+	rpc GetById (GetUserByIdRequest) returns (GetUserbyIdReply) {
+		option (google.api.http) = {
+			get: "/v1/users/{id}"
+		};
+	}
+
+	rpc Update (UpdateUserRequest) returns (shared.empty.EmptyReply) {
+		option (google.api.http) = {
+			put: "/v1/users/{id}",
+			body: "*"
+		};
+	}
+
+	rpc Delete (DeleteUserRequest) returns (shared.empty.EmptyReply) {
+		option (google.api.http) = {
+			delete: "/v1/users/{id}"
+		};
+	}
+}
+
+message GetAllUsersReply {
+	repeated User users = 1;
+}
+
+message GetUserByIdRequest {
+	string id = 1;
+}
+
+message GetUserbyIdReply {
+	string id = 1;
+	string first_name = 2;
+	string last_name = 3;
+	string email = 4;
+	google.protobuf.Timestamp birth_date = 5;
+	repeated ticket.Ticket tickets = 6;
+}
+
+message UpdateUserRequest {
+	string id = 1;
+	string first_name = 2;
+	string last_name = 3;
+	google.protobuf.Timestamp birth_date = 4;
+}
+
+message DeleteUserRequest {
+	string id = 1;
+}
+
+message User {
+	string id = 1;
+	string first_name = 2;
+	string last_name = 3;
+	string email = 4;
+	google.protobuf.Timestamp birth_date = 5;
+	repeated ticket.Ticket tickets = 6;
+}

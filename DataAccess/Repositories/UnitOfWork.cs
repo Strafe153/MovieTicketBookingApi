@@ -1,4 +1,4 @@
-﻿using Core.Interfaces;
+﻿using Core.Interfaces.Repositories;
 
 namespace DataAccess.Repositories;
 

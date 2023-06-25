@@ -1,9 +1,9 @@
-﻿using Core.Interfaces;
+﻿using Core.Interfaces.Repositories;
 using DataAccess.Repositories;
 
 namespace MovieTicketBookingApi.Configurations;
 
-public static class RepositoryConfiguration
+public static class RepositoriesConfiguration
 {
     public static void ConfigureRepositories(this IServiceCollection services)
     {

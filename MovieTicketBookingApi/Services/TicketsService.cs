@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Core.Interfaces;
+using Core.Interfaces.Repositories;
 using Grpc.Core;
 using MovieTicketBookingApi.Protos.Shared.Empty;
 using MovieTicketBookingApi.Protos.Shared.Paging;

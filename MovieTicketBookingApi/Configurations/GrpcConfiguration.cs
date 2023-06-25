@@ -13,6 +13,7 @@ public static class GrpcConfiguration
 
     public static void MapGrpcServices(this WebApplication application)
     {
+        application.MapGrpcService<UsersService>();
         application.MapGrpcService<MoviesService>();
         application.MapGrpcService<MovieHallsService>();
         application.MapGrpcService<MovieSessionsService>();

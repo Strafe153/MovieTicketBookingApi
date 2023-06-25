@@ -1,5 +1,7 @@
 ﻿using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
+using CoreUser = Core.Entities.User;
+using ProtoUser = MovieTicketBookingApi.Protos.V1.Users.User;
 using CoreMovie = Core.Entities.Movie;
 using CoreMovieHall = Core.Entities.MovieHall;
 using CoreMovieSession = Core.Entities.MovieSession;
@@ -13,6 +15,26 @@ namespace MovieTicketBookingApi.Extensions;
 
 public static class IListExtensions
 {
+    public static RepeatedField<ProtoUser> ToRepeatedField(this IList<CoreUser> incoming)
+    {
+        var result = new RepeatedField<ProtoUser>();
+
+        foreach (var item in incoming)
+        {
+            result.Add(new ProtoUser
+            {
+                Id = item.Id.ToString(),
+                FirstName = item.FirstName,
+                LastName = item.LastName,
+                Email = item.Email,
+                BirthDate = Timestamp.FromDateTime(item.BirthDate),
+                Tickets = { item.Tickets.ToRepeatedField() }
+            });
+        }
+
+        return result;
+    }
+
     public static RepeatedField<ProtoMovie> ToRepeatedField(this IList<CoreMovie> incoming)
     {
         var result = new RepeatedField<ProtoMovie>();
