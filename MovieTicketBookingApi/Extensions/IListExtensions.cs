@@ -1,12 +1,12 @@
 ﻿using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using CoreMovie = Core.Entities.Movie;
-using CoreMovieSession = Core.Entities.MovieSession;
 using CoreMovieHall = Core.Entities.MovieHall;
+using CoreMovieSession = Core.Entities.MovieSession;
 using CoreTicket = Core.Entities.Ticket;
 using ProtoMovie = MovieTicketBookingApi.Protos.V1.Movies.Movie;
-using ProtoMovieSession = MovieTicketBookingApi.Protos.V1.MovieSessions.MovieSession;
 using ProtoMovieHall = MovieTicketBookingApi.Protos.V1.MovieHalls.MovieHall;
+using ProtoMovieSession = MovieTicketBookingApi.Protos.V1.MovieSessions.MovieSession;
 using ProtoTicket = MovieTicketBookingApi.Protos.V1.Tickets.Ticket;
 
 namespace MovieTicketBookingApi.Extensions;

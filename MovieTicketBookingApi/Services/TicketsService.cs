@@ -2,8 +2,8 @@
 using Core.Interfaces;
 using Grpc.Core;
 using MovieTicketBookingApi.Protos.Shared.Empty;
-using MovieTicketBookingApi.Protos.V1.Tickets;
 using MovieTicketBookingApi.Protos.Shared.Paging;
+using MovieTicketBookingApi.Protos.V1.Tickets;
 
 namespace MovieTicketBookingApi.Services;
 
