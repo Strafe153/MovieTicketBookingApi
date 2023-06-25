@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using MovieTicketBookingApi.Extensions;
-using MovieTicketBookingApi.Protos.Movies;
+using MovieTicketBookingApi.Protos.V1.Movies;
 using CoreMovie = Core.Entities.Movie;
 
 namespace MovieTicketBookingApi.AutoMapperProfiles;

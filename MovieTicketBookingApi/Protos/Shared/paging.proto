@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package movie_ticket_booking_api.paging;
+package movie_ticket_booking_api.shared.paging;
 
-option csharp_namespace = "MovieTicketBookingApi.Protos.Paging";
+option csharp_namespace = "MovieTicketBookingApi.Protos.Shared.Paging";
 
 import "google/protobuf/wrappers.proto";
 

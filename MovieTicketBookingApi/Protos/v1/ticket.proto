@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package movie_ticket_booking_api.ticket;
+package movie_ticket_booking_api.v1.ticket;
 
-option csharp_namespace = "MovieTicketBookingApi.Protos.Tickets";
+option csharp_namespace = "MovieTicketBookingApi.Protos.V1.Tickets";
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
@@ -10,7 +10,7 @@ import "Protos/Shared/empty.proto";
 import "Protos/Shared/paging.proto";
 
 service Tickets {
-	rpc GetAll (paging.GetPaginatedDataRequest) returns (GetAllTicketsReply) {
+	rpc GetAll (shared.paging.GetPaginatedDataRequest) returns (GetAllTicketsReply) {
 		option (google.api.http) = {
 			get: "/v1/tickets"
 		};
@@ -29,7 +29,7 @@ service Tickets {
 		};
 	}
 
-	rpc Delete (DeleteTicketRequest) returns (empty.EmptyReply) {
+	rpc Delete (DeleteTicketRequest) returns (shared.empty.EmptyReply) {
 		option (google.api.http) = {
 			delete: "/v1/tickets/{id}"
 		};

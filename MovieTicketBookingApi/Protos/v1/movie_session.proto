@@ -1,17 +1,17 @@
 syntax = "proto3";
 
-package movie_ticket_booking_api.movie_session;
+package movie_ticket_booking_api.v1.movie_session;
 
-option csharp_namespace = "MovieTicketBookingApi.Protos.MovieSessions";
+option csharp_namespace = "MovieTicketBookingApi.Protos.V1.MovieSessions";
 
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
-import "Protos/ticket.proto";
+import "Protos/v1/ticket.proto";
 import "Protos/Shared/empty.proto";
 import "Protos/Shared/paging.proto";
 
 service MovieSessions {
-	rpc GetAll (paging.GetPaginatedDataRequest) returns (GetAllMovieSessionsReply) {
+	rpc GetAll (shared.paging.GetPaginatedDataRequest) returns (GetAllMovieSessionsReply) {
 		option (google.api.http) = {
 			get: "/v1/movieSessions"
 		};
@@ -30,14 +30,14 @@ service MovieSessions {
 		};
 	}
 
-	rpc Update (UpdateMovieSessionRequest) returns (empty.EmptyReply) {
+	rpc Update (UpdateMovieSessionRequest) returns (shared.empty.EmptyReply) {
 		option (google.api.http) = {
 			put: "/v1/movieSessions/{id}",
 			body: "*"
 		};
 	}
 
-	rpc Delete (DeleteMovieSessionRequest) returns (empty.EmptyReply) {
+	rpc Delete (DeleteMovieSessionRequest) returns (shared.empty.EmptyReply) {
 		option (google.api.http) = {
 			delete: "/v1/movieSessions/{id}"
 		};
