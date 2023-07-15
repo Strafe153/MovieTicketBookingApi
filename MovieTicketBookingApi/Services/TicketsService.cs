@@ -10,16 +10,13 @@ namespace MovieTicketBookingApi.Services;
 public class TicketsService : Tickets.TicketsBase
 {
     private readonly ITicketsRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public TicketsService(
         ITicketsRepository repository,
-        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -40,8 +37,8 @@ public class TicketsService : Tickets.TicketsBase
 
     public override async Task<CreateTicketReply> Create(CreateTicketRequest request, ServerCallContext context)
     {
-        var ticket = _repository.Create(_mapper.Map<Core.Entities.Ticket>(request));
-        await _unitOfWork.SaveChangesAsync();
+        var ticket = _mapper.Map<Core.Entities.Ticket>(request);
+        await _repository.Create(ticket);
 
         return _mapper.Map<CreateTicketReply>(ticket);
     }
@@ -55,8 +52,7 @@ public class TicketsService : Tickets.TicketsBase
             throw new NullReferenceException();
         }
 
-        _repository.Delete(ticket);
-        await _unitOfWork.SaveChangesAsync();
+        await _repository.Delete(ticket.Id);
 
         return new EmptyReply();
     }

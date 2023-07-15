@@ -10,16 +10,13 @@ namespace MovieTicketBookingApi.Services;
 public class MovieSessionsService : MovieSessions.MovieSessionsBase
 {
     private readonly IMovieSessionsRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public MovieSessionsService(
         IMovieSessionsRepository repository,
-        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -40,8 +37,8 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
 
     public override async Task<CreateMovieSessionReply> Create(CreateMovieSessionRequest request, ServerCallContext context)
     {
-        var movieSession = _repository.Create(_mapper.Map<Core.Entities.MovieSession>(request));
-        await _unitOfWork.SaveChangesAsync();
+        var movieSession = _mapper.Map<Core.Entities.MovieSession>(request);
+        await _repository.Create(movieSession);
 
         return _mapper.Map<CreateMovieSessionReply>(movieSession);
     }
@@ -56,8 +53,7 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
         }
 
         _mapper.Map(request, movieSession);
-        _repository.Update(movieSession);
-        await _unitOfWork.SaveChangesAsync();
+        await _repository.Update(movieSession);
 
         return new EmptyReply();
     }
@@ -71,8 +67,7 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
             throw new NullReferenceException();
         }
 
-        _repository.Delete(movieHall);
-        await _unitOfWork.SaveChangesAsync();
+        await _repository.Delete(movieHall.Id);
 
         return new EmptyReply();
     }

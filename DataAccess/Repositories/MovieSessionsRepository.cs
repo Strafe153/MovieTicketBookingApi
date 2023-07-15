@@ -1,42 +1,73 @@
 ﻿using Core.Entities;
+using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace DataAccess.Repositories;
 
 public class MovieSessionsRepository : IMovieSessionsRepository
 {
-    private readonly MovieTicketBookingContext _context;
+    private readonly IMovieTicketBookingBucketProvider _bucketProvider;
 
-    public MovieSessionsRepository(MovieTicketBookingContext context)
+    public MovieSessionsRepository(IMovieTicketBookingBucketProvider bucketProvider)
     {
-        _context = context;
+        _bucketProvider = bucketProvider;
     }
 
-    public MovieSession Create(MovieSession entity) =>
-        _context.MovieSessions.Add(entity).Entity;
+    public async Task Create(MovieSession entity)
+    {
+        var bucket = await _bucketProvider.GetBucketAsync();
+        var collection = await bucket.CollectionAsync("movie-sessions");
 
-    public void Delete(MovieSession entity) =>
-        _context.MovieSessions.Remove(entity);
+        await collection.InsertAsync(Guid.NewGuid().ToString(), entity);
+    }
+
+    public async Task Delete(Guid id)
+    {
+        var bucket = await _bucketProvider.GetBucketAsync();
+        var collection = await bucket.CollectionAsync("movie-sessions");
+
+        await collection.RemoveAsync(id.ToString());
+    }
 
     public async Task<IList<MovieSession>> GetAllAsync(int? pageNumber, int? pageSize)
     {
-        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 1;
+        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 0;
         var pageLimit = pageSize.HasValue ? pageSize.Value : 5;
 
-        return await _context.MovieSessions
-            .Include(ms => ms.Tickets)
-            .Skip((pageIndex - 1) * pageLimit)
-            .Take(pageLimit)
-            .ToListAsync();
+        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
+
+        var movieSessionsQuery = await cluster.QueryAsync<MovieSession>($@"
+            SELECT META(ms.Id),
+                   ms.DateTime,
+                   ms.MovieId,
+                   ms.MovieHallId
+            FROM movie-sessions
+            OFFSET {pageIndex * pageLimit}
+            TAKE {pageLimit}");
+
+        return await movieSessionsQuery.Rows.ToListAsync();
     }
 
-    public async Task<MovieSession?> GetByIdAsync(Guid id) =>
-        await _context.MovieSessions
-            .Include(ms => ms.Tickets)
-            .FirstOrDefaultAsync(ms => ms.Id == id);
+    public async Task<MovieSession?> GetByIdAsync(Guid id)
+    {
+        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
 
-    public void Update(MovieSession entity) =>
-        _context.MovieSessions.Update(entity);
+        var movieSessionQuery = await cluster.QueryAsync<MovieSession>($@"
+            SELECT META(ms.Id),
+                   ms.DateTime,
+                   ms.MovieId,
+                   ms.MovieHallId
+            FROM movie-sessions
+            LIMIT 1");
+
+        return await movieSessionQuery.Rows.FirstOrDefaultAsync();
+    }
+
+    public async Task Update(MovieSession entity)
+    {
+        var bucket = await _bucketProvider.GetBucketAsync();
+        var collection = await bucket.CollectionAsync("movie-sessions");
+
+        await collection.ReplaceAsync(entity.Id.ToString(), entity);
+    }
 }

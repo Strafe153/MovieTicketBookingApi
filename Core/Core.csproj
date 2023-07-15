@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Couchbase.Extensions.DependencyInjection" Version="3.4.8" />
+  </ItemGroup>
+
 </Project>

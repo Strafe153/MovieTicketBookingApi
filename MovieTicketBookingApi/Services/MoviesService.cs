@@ -10,16 +10,13 @@ namespace MovieTicketBookingApi.Services;
 public class MoviesService : Movies.MoviesBase
 {
     private readonly IMoviesRepository _moviesRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public MoviesService(
         IMoviesRepository moviesRepository,
-        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _moviesRepository = moviesRepository;
-        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -40,8 +37,8 @@ public class MoviesService : Movies.MoviesBase
 
     public override async Task<CreateMovieReply> Create(CreateMovieRequest request, ServerCallContext context)
     {
-        var movie = _moviesRepository.Create(_mapper.Map<Core.Entities.Movie>(request));
-        await _unitOfWork.SaveChangesAsync();
+        var movie = _mapper.Map<Core.Entities.Movie>(request);
+        await _moviesRepository.Create(movie);
 
         return _mapper.Map<CreateMovieReply>(movie);
     }
@@ -56,8 +53,7 @@ public class MoviesService : Movies.MoviesBase
         }
 
         _mapper.Map(request, movie);
-        _moviesRepository.Update(movie);
-        await _unitOfWork.SaveChangesAsync();
+        await _moviesRepository.Update(movie);
 
         return new EmptyReply();
     }
@@ -71,8 +67,7 @@ public class MoviesService : Movies.MoviesBase
             throw new NullReferenceException();
         }
 
-        _moviesRepository.Delete(movie);
-        await _unitOfWork.SaveChangesAsync();
+        await _moviesRepository.Delete(movie.Id);
 
         return new EmptyReply();
     }

@@ -14,8 +14,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.ApplySwagger();
 
-app.ApplyDatabaseMigrations();
-
 app.MapGrpcServices();
 
 app.Run();

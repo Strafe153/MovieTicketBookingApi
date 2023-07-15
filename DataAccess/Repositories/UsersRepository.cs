@@ -1,41 +1,75 @@
 ﻿using Core.Entities;
+using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repositories;
 
 public class UsersRepository : IUsersRepository
 {
-    private readonly MovieTicketBookingContext _context;
+    private readonly IMovieTicketBookingBucketProvider _bucketProvider;
 
-    public UsersRepository(MovieTicketBookingContext context)
+    public UsersRepository(IMovieTicketBookingBucketProvider bucketProvider)
     {
-        _context = context;
+        _bucketProvider = bucketProvider;
     }
 
-    public User Create(User entity) =>
-        _context.Users.Add(entity).Entity;
+    public async Task Create(User entity)
+    {
+        var bucket = await _bucketProvider.GetBucketAsync();
+        var collection = await bucket.CollectionAsync("users");
 
-    public void Delete(User entity) =>
-        _context.Users.Remove(entity);
+        await collection.InsertAsync(Guid.NewGuid().ToString(), entity);
+    }
+
+    public async Task Delete(Guid id)
+    {
+        var bucket = await _bucketProvider.GetBucketAsync();
+        var collection = await bucket.CollectionAsync("users");
+
+        await collection.RemoveAsync(id.ToString());
+    }
 
     public async Task<IList<User>> GetAllAsync(int? pageNumber, int? pageSize)
     {
-        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 1;
+        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 0;
         var pageLimit = pageSize.HasValue ? pageSize.Value : 5;
 
-        return await _context.Users
-            .Include(u => u.Tickets)
-            .Skip((pageIndex - 1) * pageLimit)
-            .Take(pageLimit)
-            .ToListAsync();
+        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
+
+        var usersQuery = await cluster.QueryAsync<User>($@"
+            SELECT META(u.Id),
+                   u.FirstName,
+                   u.LastName,
+                   u.Email,
+                   u.BirthDate
+            FROM users AS u
+            OFFSET {pageIndex * pageLimit}
+            TAKE {pageLimit}");
+
+        return await usersQuery.Rows.ToListAsync();
     }
 
-    public async Task<User?> GetByIdAsync(Guid id) =>
-        await _context.Users
-            .Include(u => u.Tickets)
-            .FirstOrDefaultAsync(u => u.Id == id);
+    public async Task<User?> GetByIdAsync(Guid id)
+    {
+        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
 
-    public void Update(User entity) =>
-        _context.Users.Update(entity);
+        var userQuery = await cluster.QueryAsync<User>($@"
+            SELECT META(u.Id),
+                   u.FirstName,
+                   u.LastName,
+                   u.Email,
+                   u.BirthDate
+            FROM users AS u
+            LIMIT 1");
+
+        return await userQuery.Rows.FirstOrDefaultAsync();
+    }
+
+    public async Task Update(User entity)
+    {
+        var bucket = await _bucketProvider.GetBucketAsync();
+        var collection = await bucket.CollectionAsync("users");
+
+        await collection.ReplaceAsync(entity.Id.ToString(), entity);
+    }
 }

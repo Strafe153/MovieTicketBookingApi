@@ -10,16 +10,13 @@ namespace MovieTicketBookingApi.Services;
 public class UsersService : Users.UsersBase
 {
     private readonly IUsersRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public UsersService(
         IUsersRepository repository,
-        IUnitOfWork unitOfWork,
         IMapper mapper)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
@@ -48,7 +45,7 @@ public class UsersService : Users.UsersBase
         }
 
         _mapper.Map(request, user);
-        await _unitOfWork.SaveChangesAsync();
+        await _repository.Update(user);
 
         return new EmptyReply();
     }
@@ -62,8 +59,7 @@ public class UsersService : Users.UsersBase
             throw new NullReferenceException();
         }
 
-        _repository.Delete(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _repository.Delete(user.Id);
 
         return new EmptyReply();
     }

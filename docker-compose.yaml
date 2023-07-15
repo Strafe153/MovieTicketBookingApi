@@ -1,18 +1,30 @@
 version: '3.9'
 
 services:
-  database:
-    image: container-registry.oracle.com/database/express:21.3.0-xe
-    container_name: oracle
+  couchbase:
+    image: couchbase
+    container_name: couchbase
     ports:
-      - 1521:1521
-      - 5500:5500
-    environment:
-      - ORACLE_SID=XE
-      - ORACLE_PDB=XEPDB1
-      - ORACLE_PWD=pas5w0rd!
+      - 8091-8094:8091-8094
+      - 11210:11210
     volumes:
-      - oracle-data:/opt/oracle/oradata
+      - couchbase_data:/opt/couchbase/var
+      - couchbase_config:/opt/couchbase/etc
+    environment:
+      - COUCHBASE_SERVER_LICENCE=accept
+      - CouchbaseUsername=admin
+      - CouchbasePassword=pa5sw0rd!
+      - ServicesData=/opt/couchbase/var
+      - IndexData-/opt/couchbase/var
+      - AnalyticsData=/opt/couchbase/var
+      - EventingData=/opt/couchbase/var
+      - SearchData=/opt/couchbase/var
+    networks:
+      - couchbase_network
 
 volumes:
-  oracle-data:
+  couchbase_data:
+  couchbase_config:
+
+networks:
+  couchbase_network:
