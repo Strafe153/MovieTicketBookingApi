@@ -5,12 +5,13 @@ package movie_ticket_booking_api.v1.ticket;
 option csharp_namespace = "MovieTicketBookingApi.Protos.V1.Tickets";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 import "Protos/google/api/annotations.proto";
 import "Protos/shared/empty.proto";
 import "Protos/shared/paging.proto";
 
 service Tickets {
-	rpc GetAll (shared.paging.GetPaginatedDataRequest) returns (GetAllTicketsReply) {
+	rpc GetAll (shared.paging.GetPaginatedDataRequest) returns (GetTicketsReply) {
 		option (google.api.http) = {
 			get: "/v1/tickets"
 		};
@@ -19,6 +20,12 @@ service Tickets {
 	rpc GetById (GetTicketByIdRequest) returns (GetTicketByIdReply) {
 		option (google.api.http) = {
 			get: "/v1/tickets/{id}"
+		};
+	}
+
+	rpc GetByUserId (GetTicketsByUserIdRequest) returns (GetTicketsReply) {
+		option (google.api.http) = {
+			get: "/v1/tickets/{userId}"
 		};
 	}
 
@@ -36,7 +43,7 @@ service Tickets {
 	}
 }
 
-message GetAllTicketsReply {
+message GetTicketsReply {
 	repeated Ticket tickets = 1;
 }
 
@@ -50,6 +57,12 @@ message GetTicketByIdReply {
 	int32 seat_number = 3;
 	string movie_session_id = 4;
 	string user_id = 5;
+}
+
+message GetTicketsByUserIdRequest {
+	google.protobuf.Int32Value page_number = 1;
+	google.protobuf.Int32Value page_size = 2;
+	string userId = 3;
 }
 
 message CreateTicketRequest {

@@ -1,4 +1,5 @@
-﻿using MovieTicketBookingApi.Services;
+﻿using MovieTicketBookingApi.Interceptors;
+using MovieTicketBookingApi.Services;
 
 namespace MovieTicketBookingApi.Configurations;
 
@@ -7,7 +8,7 @@ public static class GrpcConfiguration
     public static void ConfigureGrpc(this IServiceCollection services)
     {
         services
-            .AddGrpc()
+            .AddGrpc(options => options.Interceptors.Add<ExceptionHandlingInterceptor>())
             .AddJsonTranscoding();
     }
 
@@ -18,5 +19,11 @@ public static class GrpcConfiguration
         application.MapGrpcService<MovieHallsService>();
         application.MapGrpcService<MovieSessionsService>();
         application.MapGrpcService<TicketsService>();
+        application.MapGrpcService<HealthChecksService>();
+    }
+
+    public static void RegisterRecurringJobs()
+    {
+
     }
 }

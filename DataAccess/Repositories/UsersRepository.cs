@@ -1,6 +1,8 @@
 ﻿using Core.Entities;
+using Core.Extensions;
 using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
+using Core.Shared.Constants;
 
 namespace DataAccess.Repositories;
 
@@ -13,63 +15,78 @@ public class UsersRepository : IUsersRepository
         _bucketProvider = bucketProvider;
     }
 
-    public async Task Create(User entity)
+    public async Task DeleteAsync(string id)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("users");
-
-        await collection.InsertAsync(Guid.NewGuid().ToString(), entity);
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
+        await collection.RemoveAsync(id);
     }
 
-    public async Task Delete(Guid id)
+    public async Task<IList<User>> GetAllAsync(int pageNumber, int pageSize)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("users");
+        var scope = await (await _bucketProvider.GetBucketAsync()).ScopeAsync(CouchbaseConstants.DefaultScope);
+        var query = $@"
+            SELECT META(u).id,
+                   u.firstName,
+                   u.lastName,
+                   u.email,
+                   u.birthDate,
+                   ARRAY_AGG(t) AS Tickets
+            FROM `{CouchbaseConstants.UsersCollection}` AS u
+            LEFT JOIN `{CouchbaseConstants.TicketsCollection}` AS t ON t.userId = META(u).id
+            GROUP BY u
+            ORDER BY u.email, u.firstName, u.lastName, u.birthDate
+            OFFSET {(pageNumber - 1) * pageSize}
+            LIMIT {pageSize}";
 
-        await collection.RemoveAsync(id.ToString());
+        var queryResult = await scope.QueryAsync<User>(query);
+
+        return await queryResult.Rows.ToListAsync();
     }
 
-    public async Task<IList<User>> GetAllAsync(int? pageNumber, int? pageSize)
+    public async Task<User?> GetByEmailAsync(string email)
     {
-        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 0;
-        var pageLimit = pageSize.HasValue ? pageSize.Value : 5;
+        var scope = await _bucketProvider.GetScopeAsync();
+        var query = $@"
+            SELECT META(u).id,
+                   u.email,
+                   u.passwordHash,
+                   u.passwordSalt
+            FROM `{CouchbaseConstants.UsersCollection}` AS u
+            WHERE u.email = '{email}'";
 
-        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
-
-        var usersQuery = await cluster.QueryAsync<User>($@"
-            SELECT META(u.Id),
-                   u.FirstName,
-                   u.LastName,
-                   u.Email,
-                   u.BirthDate
-            FROM users AS u
-            OFFSET {pageIndex * pageLimit}
-            TAKE {pageLimit}");
-
-        return await usersQuery.Rows.ToListAsync();
+        var queryResult = await scope.QueryAsync<User>(query);
+        return await queryResult.FirstOrDefaultAsync();
     }
 
-    public async Task<User?> GetByIdAsync(Guid id)
+    public async Task<User> GetByIdAsync(string id)
     {
-        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
+        var scope = await (await _bucketProvider.GetBucketAsync()).ScopeAsync(CouchbaseConstants.DefaultScope);
+        var query = $@"
+            SELECT META(u).id,
+                   u.firstName,
+                   u.lastName,
+                   u.email,
+                   u.birthDate,
+                   ARRAY_AGG(t) AS Tickets
+            FROM `{CouchbaseConstants.UsersCollection}` AS u
+            LEFT JOIN `{CouchbaseConstants.TicketsCollection}` AS t ON t.userId = META(u).id
+            WHERE META(u).id = '{id}'
+            GROUP BY u";
 
-        var userQuery = await cluster.QueryAsync<User>($@"
-            SELECT META(u.Id),
-                   u.FirstName,
-                   u.LastName,
-                   u.Email,
-                   u.BirthDate
-            FROM users AS u
-            LIMIT 1");
+        var queryResult = await scope.QueryAsync<User>(query);
 
-        return await userQuery.Rows.FirstOrDefaultAsync();
+        return await queryResult.FirstOrDefaultAsync();
     }
 
-    public async Task Update(User entity)
+    public async Task InsertAsync(User entity)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("users");
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
+        await collection.InsertAsync(entity.Id.ToString(), entity);
+    }
 
+    public async Task UpdateAsync(User entity)
+    {
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
         await collection.ReplaceAsync(entity.Id.ToString(), entity);
     }
 }

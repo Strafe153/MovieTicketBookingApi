@@ -1,6 +1,8 @@
 ﻿using Core.Entities;
+using Core.Extensions;
 using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
+using Core.Shared.Constants;
 
 namespace DataAccess.Repositories;
 
@@ -13,63 +15,73 @@ public class TicketsRepository : ITicketsRepository
         _bucketProvider = bucketProvider;
     }
 
-    public async Task Create(Ticket entity)
+    public async Task DeleteAsync(string id)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("tickets");
-
-        await collection.InsertAsync(Guid.NewGuid().ToString(), entity);
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
+        await collection.RemoveAsync(id);
     }
 
-    public async Task Delete(Guid id)
+    public async Task<IList<Ticket>> GetAllAsync(int pageNumber, int pageSize)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("tickets");
+        var scope = await (await _bucketProvider.GetBucketAsync()).ScopeAsync(CouchbaseConstants.DefaultScope);
+        var query = $@"
+            SELECT META(t).id,
+                   t.dateTime,
+                   t.seatNumber,
+                   t.movieSessionId,
+                   t.userId
+            FROM `{CouchbaseConstants.TicketsCollection}` AS t
+            OFFSET {(pageNumber - 1) * pageSize}
+            LIMIT {pageSize}";
 
-        await collection.RemoveAsync(id.ToString());
+        var queryResult = await scope.QueryAsync<Ticket>(query);
+
+        return await queryResult.Rows.ToListAsync();
     }
 
-    public async Task<IList<Ticket>> GetAllAsync(int? pageNumber, int? pageSize)
+    public async Task<Ticket> GetByIdAsync(string id)
     {
-        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 0;
-        var pageLimit = pageSize.HasValue ? pageSize.Value : 5;
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
+        var getResult = await collection.GetAsync(id);
+        var ticket = getResult.ContentAs<Ticket>();
 
-        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
+        if (ticket is not null)
+        {
+            ticket.Id = Guid.Parse(id);
+        }
 
-        var ticketsQuery = await cluster.QueryAsync<Ticket>($@"
-            SELECT META(t.Id),
-                   t.DateTime,
-                   t.SeatNumber,
-                   t.MovieSessionId,
-                   t.UserId
-            FROM tickets AS t
-            OFFSET {pageIndex * pageLimit}
-            TAKE {pageLimit}");
-
-        return await ticketsQuery.Rows.ToListAsync();
+        return ticket!;
     }
 
-    public async Task<Ticket?> GetByIdAsync(Guid id)
+    public async Task<IList<Ticket>> GetByUserIdAsync(int pageNumber, int pageSize, string userId)
     {
-        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
+        var scope = await _bucketProvider.GetScopeAsync();
+        var query = $@"
+            SELECT META(t).id,
+                   t.dateTime,
+                   t.seatNumber,
+                   t.movieSessionId,
+                   t.userId
+            FROM `{CouchbaseConstants.TicketsCollection}` AS t
+            WHERE t.userId = '{userId}'
+            ORDER BY t.dateTime, t.seatNumber
+            OFFSET {(pageNumber - 1) * pageSize}
+            LIMIT {pageSize}";
 
-        var ticketQuery = await cluster.QueryAsync<Ticket>($@"
-            SELECT META(t.Id),
-                   t.DateTime,
-                   t.SeatNumber,
-                   t.MovieSessionId,
-                   t.UserId
-            FROM tickets AS t
-            LIMIT 1");
+        var tickets = await scope.QueryAsync<Ticket>(query);
 
-        return await ticketQuery.Rows.FirstOrDefaultAsync();
+        return await tickets.Rows.ToListAsync();
     }
 
-    public async Task Update(Ticket entity)
+    public async Task InsertAsync(Ticket entity)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("tickets");
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
+        await collection.InsertAsync(entity.Id.ToString(), entity);
+    }
 
+    public async Task UpdateAsync(Ticket entity)
+    {
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
         await collection.ReplaceAsync(entity.Id.ToString(), entity);
     }
 }

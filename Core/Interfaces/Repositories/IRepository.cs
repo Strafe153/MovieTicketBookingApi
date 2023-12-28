@@ -2,9 +2,9 @@
 
 public interface IRepository<T>
 {
-    Task<IList<T>> GetAllAsync(int? pageNumber, int? pageSize);
-    Task<T?> GetByIdAsync(Guid id);
-    Task Create(T entity);
-    Task Update(T entity);
-    Task Delete(Guid id);
+    Task<IList<T>> GetAllAsync(int pageNumber, int pageSize);
+    Task<T> GetByIdAsync(string id);
+    Task InsertAsync(T entity);
+    Task UpdateAsync(T entity);
+    Task DeleteAsync(string id);
 }

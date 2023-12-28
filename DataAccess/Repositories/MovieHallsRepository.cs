@@ -1,6 +1,8 @@
 ﻿using Core.Entities;
+using Core.Extensions;
 using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
+using Core.Shared.Constants;
 
 namespace DataAccess.Repositories;
 
@@ -13,57 +15,59 @@ public class MovieHallsRepository : IMovieHallsRepository
         _bucketProvider = bucketProvider;
     }
 
-    public async Task Create(MovieHall entity)
+    public async Task DeleteAsync(string id)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("movie-halls");
-
-        await collection.InsertAsync(Guid.NewGuid().ToString(), entity);
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
+        await collection.RemoveAsync(id);
     }
 
-    public async Task Delete(Guid id)
+    public async Task<IList<MovieHall>> GetAllAsync(int pageNumber, int pageSize)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("movie-halls");
+        var scope = await _bucketProvider.GetScopeAsync();
+        var query = $@"
+            SELECT META(mh).id,
+                   mh.name,
+                   mh.numberOfSeats,
+                   ARRAY_AGG(ms) AS MovieSessions
+            FROM `{CouchbaseConstants.MovieHallsCollection}` AS mh
+            LEFT JOIN `{CouchbaseConstants.MovieSessionsCollection}` AS ms ON ms.movieHallId = META(mh).id
+            GROUP BY mh
+            ORDER BY mh.name, mh.numberOfSeats
+            OFFSET {(pageNumber - 1) * pageSize}
+            LIMIT {pageSize}";
 
-        await collection.RemoveAsync(id.ToString());
+        var queryResult = await scope.QueryAsync<MovieHall>(query);
+
+        return await queryResult.Rows.ToListAsync();
     }
 
-    public async Task<IList<MovieHall>> GetAllAsync(int? pageNumber, int? pageSize)
+    public async Task<MovieHall> GetByIdAsync(string id)
     {
-        var pageIndex = pageNumber.HasValue ? pageNumber.Value : 0;
-        var pageLimit = pageSize.HasValue ? pageSize.Value : 5;
+        var scope = await _bucketProvider.GetScopeAsync();
+        var query = $@"
+            SELECT META(mh).id,
+                   mh.name,
+                   mh.numberOfSeats,
+                   ARRAY_AGG(ms) AS MovieSessions
+            FROM `{CouchbaseConstants.MovieHallsCollection}` AS mh
+            LEFT JOIN `{CouchbaseConstants.MovieSessionsCollection}` AS ms ON ms.movieHallId = META(mh).id
+            GROUP BY mh
+            WHERE META(mh).id = 'id'";
 
-        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
-        var movieHallsQuery = await cluster.QueryAsync<MovieHall>($@"
-            SELECT META(mh.Id),
-                   mh.Name,
-                   mh.NumberOfSeats
-            FROM movie-halls AS mh
-            OFFSET {pageIndex * pageLimit}
-            TAKE {pageLimit}");
+        var queryResult = await scope.QueryAsync<MovieHall>(query);
 
-        return await movieHallsQuery.Rows.ToListAsync();
+        return await queryResult.FirstOrDefaultAsync();
     }
 
-    public async Task<MovieHall?> GetByIdAsync(Guid id)
+    public async Task InsertAsync(MovieHall entity)
     {
-        var cluster = (await _bucketProvider.GetBucketAsync()).Cluster;
-        var movieHallQuery = await cluster.QueryAsync<MovieHall>($@"
-            SELECT META(mh.Id),
-                   mh.Name,
-                   mh.NumberOfSeats
-            FROM movie-halls AS mh
-            LIMIT 1");
-
-        return await movieHallQuery.Rows.FirstOrDefaultAsync();
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
+        await collection.InsertAsync(entity.Id.ToString(), entity);
     }
 
-    public async Task Update(MovieHall entity)
+    public async Task UpdateAsync(MovieHall entity)
     {
-        var bucket = await _bucketProvider.GetBucketAsync();
-        var collection = await bucket.CollectionAsync("movie-halls");
-
+        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
         await collection.ReplaceAsync(entity.Id.ToString(), entity);
     }
 }

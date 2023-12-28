@@ -18,9 +18,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="7.0.0" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Couchbase.Extensions.DependencyInjection" Version="3.4.8" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.54.0" />
+    <PackageReference Include="Grpc.AspNetCore.HealthChecks" Version="2.55.0" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.6" />
+    <PackageReference Include="Hangfire.Core" Version="1.8.6" />
+    <PackageReference Include="Hangfire.InMemory" Version="0.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="7.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.Swagger" Version="0.3.7" />
@@ -36,6 +41,8 @@
 	<Protobuf Include="Protos\v1\movie_hall.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\v1\movie_session.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\v1\ticket.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\v1\authentication.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\v1\health_checks.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\shared\empty.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\shared\paging.proto" GrpcServices="server" />
   </ItemGroup>

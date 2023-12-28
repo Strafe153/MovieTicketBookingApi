@@ -22,7 +22,7 @@ public static class SwaggerConfiguration
         });
     }
 
-    public static void ApplySwagger(this WebApplication application)
+    public static void ConfigureSwaggerUI(this WebApplication application)
     {
         application.UseSwagger();
         application.UseSwaggerUI(options =>

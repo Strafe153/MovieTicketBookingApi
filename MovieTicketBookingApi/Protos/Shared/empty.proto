@@ -4,6 +4,10 @@ package movie_ticket_booking_api.shared.empty;
 
 option csharp_namespace = "MovieTicketBookingApi.Protos.Shared.Empty";
 
+message EmptyRequest {
+
+}
+
 message EmptyReply {
 
 }

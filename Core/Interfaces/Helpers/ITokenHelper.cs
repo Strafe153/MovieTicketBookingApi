@@ -1,8 +1,8 @@
 ﻿using Core.Entities;
 
-namespace Core.Interfaces.Services;
+namespace Core.Interfaces.Helpers;
 
-public interface ITokenService
+public interface ITokenHelper
 {
     string GenerateAccessToken(User user);
 }
