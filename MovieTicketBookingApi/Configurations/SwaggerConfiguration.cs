@@ -13,7 +13,7 @@ public static class SwaggerConfiguration
 
             options.SwaggerDoc("v1", new OpenApiInfo
             {
-                Title = "Movie Ticket Booking Api",
+                Title = "MovieTicketBookingApi",
                 Version = "v1"
             });
 
@@ -22,7 +22,7 @@ public static class SwaggerConfiguration
         });
     }
 
-    public static void ApplySwagger(this WebApplication application)
+    public static void ConfigureSwaggerUI(this WebApplication application)
     {
         application.UseSwagger();
         application.UseSwaggerUI(options =>

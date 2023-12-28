@@ -23,6 +23,20 @@ service Users {
 		};
 	}
 
+	rpc Register (RegisterUserRequest) returns (RegisterUserReply) {
+		option (google.api.http) = {
+			post: "/v1/users/register",
+			body: "*"
+		};
+	}
+
+	rpc Login (LoginUserRequest) returns (LoginUserReply) {
+		option (google.api.http) = {
+			post: "/v1/users/login",
+			body: "*"
+		};
+	}
+
 	rpc Update (UpdateUserRequest) returns (shared.empty.EmptyReply) {
 		option (google.api.http) = {
 			put: "/v1/users/{id}",
@@ -52,6 +66,31 @@ message GetUserbyIdReply {
 	string email = 4;
 	google.protobuf.Timestamp birth_date = 5;
 	repeated ticket.Ticket tickets = 6;
+}
+
+message RegisterUserRequest {
+	string first_name = 1;
+	string last_name = 2;
+	string email = 3;
+	google.protobuf.Timestamp birth_date = 4;
+	string password = 5;
+}
+
+message RegisterUserReply {
+	string id = 1;
+	string first_name = 2;
+	string last_name = 3;
+	string email = 4;
+	google.protobuf.Timestamp birth_date = 5;
+}
+
+message LoginUserRequest {
+	string email = 1;
+	string password = 2;
+}
+
+message LoginUserReply {
+	string access_token = 1;
 }
 
 message UpdateUserRequest {

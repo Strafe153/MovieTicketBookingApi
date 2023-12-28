@@ -63,7 +63,9 @@ message GetMovieByIdRequest {
 message GetMovieByIdReply {
 	string id = 1;
 	string title = 2;
-	repeated movie_session.MovieSession movie_sessions = 3;
+	int32 duration_in_minutes = 3;
+	AgeRating age_rating = 4;
+	repeated movie_session.MovieSession movie_sessions = 5;
 }
 
 message CreateMovieRequest {
