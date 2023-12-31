@@ -1,5 +1,7 @@
 using Hangfire;
+using HangfireBasicAuthenticationFilter;
 using MovieTicketBookingApi.Configurations;
+using MovieTicketBookingApi.Configurations.ConfigurationModels;
 using MovieTicketBookingApi.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,7 +35,7 @@ app.MapGrpcHealthChecksService();
 
 app.ConfigureCouchbaseLifetime();
 
-app.UseHangfireDashboard();
+app.UseAuthenticatedHangfireDashboard(builder.Configuration);
 
 await app.SetupDatabase();
 RecurringJobsRegistry.RegisterRecurringJobs();

@@ -8,8 +8,7 @@ public static class RateLimitingConfiguration
 {
     public static void ConfigureRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
-        var rateLimitOptions = new RateLimitOptions();
-        configuration.GetSection(RateLimitOptions.RateLimitOptionsSectionName).Bind(rateLimitOptions);
+        var rateLimitOptions = configuration.GetSection(RateLimitOptions.RateLimitOptionsSectionName).Get<RateLimitOptions>()!;
 
         services.AddRateLimiter(options =>
         {
@@ -20,7 +19,7 @@ public static class RateLimitingConfiguration
                 tokenOptions.AutoReplenishment = rateLimitOptions.AutoReplenishment;
                 tokenOptions.ReplenishmentPeriod = TimeSpan.FromSeconds(rateLimitOptions.ReplenishmentPeriod);
                 tokenOptions.QueueLimit = rateLimitOptions.QueueLimit;
-                tokenOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                tokenOptions.QueueProcessingOrder = tokenOptions.QueueProcessingOrder;
             });
 
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

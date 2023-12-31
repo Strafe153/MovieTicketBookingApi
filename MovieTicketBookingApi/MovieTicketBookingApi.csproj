@@ -25,6 +25,7 @@
     <PackageReference Include="Grpc.AspNetCore.HealthChecks" Version="2.55.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.6" />
     <PackageReference Include="Hangfire.Core" Version="1.8.6" />
+    <PackageReference Include="Hangfire.Dashboard.Basic.Authentication" Version="7.0.1" />
     <PackageReference Include="Hangfire.InMemory" Version="0.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="7.0.7" />
