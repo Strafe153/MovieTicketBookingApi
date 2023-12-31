@@ -21,7 +21,9 @@ public static class HangfireConfiguration
 
     public static void UseAuthenticatedHangfireDashboard(this WebApplication application, IConfiguration configuration)
     {
-        var hangfireConfiguration = configuration.GetSection(HangfireOptions.HangfireSectionName).Get<HangfireOptions>()!;
+        var hangfireConfiguration = configuration
+            .GetSection(HangfireOptions.HangfireSectionName)
+            .Get<HangfireOptions>()!;
 
         application.UseHangfireDashboard(options: new DashboardOptions
         {
