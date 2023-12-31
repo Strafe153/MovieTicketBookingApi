@@ -17,18 +17,21 @@ namespace MovieTicketBookingApi.Services;
 [EnableRateLimiting("tokenBucket")]
 public class TicketsService : Tickets.TicketsBase
 {
-    private readonly ITicketsRepository _repository;
+    private readonly ITicketsRepository _ticketsRepository;
+    private readonly IMovieSessionsRepository _movieSessionsRepository;
     private readonly ICacheHelper _cacheHelper;
     private readonly IMapper _mapper;
     private readonly CacheOptions _cacheOptions;
 
     public TicketsService(
-        ITicketsRepository repository,
+        ITicketsRepository ticketsRepository,
+        IMovieSessionsRepository movieSessionsRepository,
         ICacheHelper cacheHelper,
         IMapper mapper,
         CacheOptions cacheOptions)
     {
-        _repository = repository;
+        _ticketsRepository = ticketsRepository;
+        _movieSessionsRepository = movieSessionsRepository;
         _cacheHelper = cacheHelper;
         _mapper = mapper;
         _cacheOptions = cacheOptions;
@@ -41,7 +44,7 @@ public class TicketsService : Tickets.TicketsBase
 
         if (tickets is null)
         {
-            tickets = await _repository.GetAllAsync(request.PageNumber.Value, request.PageSize.Value);
+            tickets = await _ticketsRepository.GetAllAsync(request.PageNumber.Value, request.PageSize.Value);
             _cacheHelper.Set(key, tickets, _cacheOptions);
         }
 
@@ -55,7 +58,7 @@ public class TicketsService : Tickets.TicketsBase
 
         if (ticket is null)
         {
-            ticket = await _repository.GetByIdOrThrowAsync(request.Id);
+            ticket = await _ticketsRepository.GetByIdOrThrowAsync(request.Id);
             _cacheHelper.Set(key, ticket, _cacheOptions);
         }
 
@@ -69,7 +72,7 @@ public class TicketsService : Tickets.TicketsBase
 
         if (tickets is null)
         {
-            tickets = await _repository.GetByUserIdAsync(request.PageNumber.Value, request.PageSize.Value, request.UserId);
+            tickets = await _ticketsRepository.GetByUserIdAsync(request.PageNumber.Value, request.PageSize.Value, request.UserId);
             _cacheHelper.Set(key, tickets, _cacheOptions);
         }
 
@@ -78,18 +81,21 @@ public class TicketsService : Tickets.TicketsBase
 
     public override async Task<CreateTicketReply> Create(CreateTicketRequest request, ServerCallContext context)
     {
+        var movieSession = await _movieSessionsRepository.GetByIdOrThrowAsync(request.MovieSessionId);
+
         var ticket = _mapper.Map<Ticket>(request);
+        ticket.DateTime = movieSession.DateTime;
         ticket.Id = Guid.NewGuid();
 
-        await _repository.InsertAsync(ticket);
+        await _ticketsRepository.InsertAsync(ticket);
 
         return _mapper.Map<CreateTicketReply>(ticket);
     }
 
     public override async Task<EmptyReply> Delete(DeleteTicketRequest request, ServerCallContext context)
     {
-        await _repository.GetByIdOrThrowAsync(request.Id);
-        await _repository.DeleteAsync(request.Id);
+        await _ticketsRepository.GetByIdOrThrowAsync(request.Id);
+        await _ticketsRepository.DeleteAsync(request.Id);
 
         return new EmptyReply();
     }

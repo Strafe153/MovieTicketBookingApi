@@ -66,10 +66,9 @@ message GetTicketsByUserIdRequest {
 }
 
 message CreateTicketRequest {
-	google.protobuf.Timestamp date_time = 1;
-	int32 seat_number = 2;
-	string movie_session_id = 3;
-	string user_id = 4;
+	int32 seat_number = 1;
+	string movie_session_id = 2;
+	string user_id = 3;
 }
 
 message CreateTicketReply {

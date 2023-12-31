@@ -3,8 +3,7 @@ using Core.Extensions;
 using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
 using Core.Shared.Constants;
-using Couchbase.KeyValue;
-using System.Text.Json;
+using Couchbase.Query;
 
 namespace DataAccess.Repositories;
 
@@ -23,43 +22,32 @@ public class MovieSessionsRepository : IMovieSessionsRepository
         await collection.RemoveAsync(id);
     }
 
-    public async Task DeleteFinished()
+    public async Task UpdateFinishedAsync()
     {
-        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieSessionsCollection);
         var scope = await _bucketProvider.GetScopeAsync();
-        //var query = $@"
-        //    SELECT META(ms).id,
-        //           ms.dateTime,
-        //           m.durationInMinutes
-        //    FROM `{CouchbaseConstants.MOVIE_SESSIONS_COLLECTION}` AS ms
-        //    JOIN `{CouchbaseConstants.MOVIES_COLLECTION}` AS m ON ms.movieId = META(m).id
-        //    WHERE ms.hasFinished = 0";
+
         var query = $@"
-            SELECT META(ms).id AS Item1,
-                   ms.dateTime AS Item2,
-                   m.durationInMinutes AS Item3
-            FROM `{CouchbaseConstants.MovieSessionsCollection}` AS ms
-            JOIN `{CouchbaseConstants.MoviesCollection}` AS m ON ms.movieId = META(m).id
-            WHERE ms.hasFinished = false";
+            UPDATE `{CouchbaseConstants.MovieSessionsCollection}` AS ms2
+            SET ms2.isFinished = true
+            WHERE META(ms2).id IN (
+                SELECT RAW META(ms).id
+                FROM `{CouchbaseConstants.MovieSessionsCollection}` AS ms
+                JOIN `{CouchbaseConstants.MoviesCollection}` AS m on META(m).id = ms.movieId
+                WHERE STR_TO_MILLIS(ms.dateTime) + (m.durationInMinutes * 60000) < STR_TO_MILLIS(NOW_STR())
+                AND ms.isFinished = false
+            )";
 
-        //var queryResult = await scope.QueryAsync<MovieSession>(query);
-        var queryResult = await scope.QueryAsync<(Guid, DateTime, int)>(query);
-        var items = await queryResult.Rows.ToListAsync();
-
-        foreach (var item in items)
-        {
-            if (item.Item2.AddMinutes(item.Item3) > DateTime.Now)
-            {
-                await collection.MutateInAsync(
-                    item.Item1.ToString(),
-                    specs => specs.Upsert(JsonNamingPolicy.CamelCase.ConvertName(nameof(MovieSession.HasFinished)), true));
-            }
-        }
+        await scope.QueryAsync<object>(query);
     }
 
     public async Task<IList<MovieSession>> GetAllAsync(int pageNumber, int pageSize)
     {
         var scope = await _bucketProvider.GetScopeAsync();
+
+        var queryOptions = new QueryOptions()
+            .Parameter("offset", (pageNumber - 1) * pageSize)
+            .Parameter("pageSize", pageSize);
+
         var query = $@"
             SELECT META(ms).id,
                    ms.dateTime,
@@ -68,13 +56,13 @@ public class MovieSessionsRepository : IMovieSessionsRepository
                    ARRAY_AGG(t) AS Tickets
             FROM `{CouchbaseConstants.MovieSessionsCollection}` AS ms
             LEFT JOIN `{CouchbaseConstants.TicketsCollection}` AS t ON t.movieSessionId = META(ms).id
-            WHERE ms.hasFinished = false
+            WHERE ms.isFinished = false
             GROUP BY ms
             ORDER BY ms.dateTime
-            OFFSET {(pageNumber - 1) * pageSize}
-            LIMIT {pageSize}";
+            OFFSET $offset
+            LIMIT $pageSize";
 
-        var queryResult = await scope.QueryAsync<MovieSession>(query);
+        var queryResult = await scope.QueryAsync<MovieSession>(query, queryOptions);
 
         return await queryResult.Rows.ToListAsync();
     }
@@ -82,6 +70,8 @@ public class MovieSessionsRepository : IMovieSessionsRepository
     public async Task<MovieSession> GetByIdAsync(string id)
     {
         var scope = await _bucketProvider.GetScopeAsync();
+        var queryOptions = new QueryOptions().Parameter("id", id);
+
         var query = $@"
             SELECT META(ms).id,
                    ms.dateTime,
@@ -90,11 +80,11 @@ public class MovieSessionsRepository : IMovieSessionsRepository
                    ARRAY_AGG(t) AS Tickets
             FROM `{CouchbaseConstants.MovieSessionsCollection}` AS ms
             LEFT JOIN `{CouchbaseConstants.TicketsCollection}` AS t ON t.movieSessionId = META(ms).id
-            WHERE ms.hasFinished = 0
+            WHERE ms.isFinished = false
             GROUP BY ms
-            WHERE META(ms).id = 'id'";
+            WHERE META(ms).id = $id";
 
-        var queryResult = await scope.QueryAsync<MovieSession>(query);
+        var queryResult = await scope.QueryAsync<MovieSession>(query, queryOptions);
 
         return await queryResult.FirstOrDefaultAsync();
     }

@@ -8,9 +8,7 @@ public static class RecurringJobsRegistry
 {
     public static void RegisterRecurringJobs()
     {
-        RecurringJob.AddOrUpdate<MovieSessionFinishJob>(
-            nameof(MovieSessionFinishJob),
-            job => job.ExecuteAsync(),
-            CronConstants.EveryFifteenMinutes);
+        RecurringJob.AddOrUpdate<MovieSessionFinishJob>(nameof(MovieSessionFinishJob), j => j.ExecuteAsync(), CronConstants.Quarterly);
+        RecurringJob.AddOrUpdate<TicketsFinishJob>(nameof(TicketsFinishJob), j => j.ExecuteAsync(), CronConstants.Quarterly);
     }
 }

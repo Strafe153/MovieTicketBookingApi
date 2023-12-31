@@ -1,4 +1,6 @@
 ﻿using Hangfire;
+using HangfireBasicAuthenticationFilter;
+using MovieTicketBookingApi.Configurations.ConfigurationModels;
 
 namespace MovieTicketBookingApi.Configurations;
 
@@ -15,5 +17,25 @@ public static class HangfireConfiguration
         });
 
         services.AddHangfireServer();
+    }
+
+    public static void UseAuthenticatedHangfireDashboard(this WebApplication application, IConfiguration configuration)
+    {
+        var hangfireConfiguration = configuration
+            .GetSection(HangfireOptions.HangfireSectionName)
+            .Get<HangfireOptions>()!;
+
+        application.UseHangfireDashboard(options: new DashboardOptions
+        {
+            DashboardTitle = typeof(Program).Assembly.GetName().Name,
+            Authorization = new[]
+            {
+                new HangfireCustomBasicAuthenticationFilter
+                {
+                    User = hangfireConfiguration.User,
+                    Pass = hangfireConfiguration.Password
+                }
+            }
+        });
     }
 }
