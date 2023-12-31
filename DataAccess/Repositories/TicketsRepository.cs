@@ -3,6 +3,7 @@ using Core.Extensions;
 using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
 using Core.Shared.Constants;
+using Couchbase.Query;
 
 namespace DataAccess.Repositories;
 
@@ -24,6 +25,11 @@ public class TicketsRepository : ITicketsRepository
     public async Task<IList<Ticket>> GetAllAsync(int pageNumber, int pageSize)
     {
         var scope = await (await _bucketProvider.GetBucketAsync()).ScopeAsync(CouchbaseConstants.DefaultScope);
+
+        var queryOptions = new QueryOptions()
+            .Parameter("offset", (pageNumber - 1) * pageSize)
+            .Parameter("pageSize", pageSize);
+
         var query = $@"
             SELECT META(t).id,
                    t.dateTime,
@@ -31,10 +37,11 @@ public class TicketsRepository : ITicketsRepository
                    t.movieSessionId,
                    t.userId
             FROM `{CouchbaseConstants.TicketsCollection}` AS t
-            OFFSET {(pageNumber - 1) * pageSize}
-            LIMIT {pageSize}";
+            WHERE t.isCompleted = false
+            OFFSET $offset
+            LIMIT $pageSize";
 
-        var queryResult = await scope.QueryAsync<Ticket>(query);
+        var queryResult = await scope.QueryAsync<Ticket>(query, queryOptions);
 
         return await queryResult.Rows.ToListAsync();
     }
@@ -56,6 +63,12 @@ public class TicketsRepository : ITicketsRepository
     public async Task<IList<Ticket>> GetByUserIdAsync(int pageNumber, int pageSize, string userId)
     {
         var scope = await _bucketProvider.GetScopeAsync();
+
+        var queryOptions = new QueryOptions()
+            .Parameter("userId", userId)
+            .Parameter("offset", (pageNumber - 1) * pageSize)
+            .Parameter("pageSize", pageSize);
+
         var query = $@"
             SELECT META(t).id,
                    t.dateTime,
@@ -63,12 +76,13 @@ public class TicketsRepository : ITicketsRepository
                    t.movieSessionId,
                    t.userId
             FROM `{CouchbaseConstants.TicketsCollection}` AS t
-            WHERE t.userId = '{userId}'
+            WHERE t.userId = $userId
+                  AND t.isCompleted = false
             ORDER BY t.dateTime, t.seatNumber
-            OFFSET {(pageNumber - 1) * pageSize}
-            LIMIT {pageSize}";
+            OFFSET $offset
+            LIMIT $pageSize";
 
-        var tickets = await scope.QueryAsync<Ticket>(query);
+        var tickets = await scope.QueryAsync<Ticket>(query, queryOptions);
 
         return await tickets.Rows.ToListAsync();
     }
@@ -83,5 +97,23 @@ public class TicketsRepository : ITicketsRepository
     {
         var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
         await collection.ReplaceAsync(entity.Id.ToString(), entity);
+    }
+
+    public async Task UpdateFinishedAsync()
+    {
+        var scope = await _bucketProvider.GetScopeAsync();
+
+        var query = $@"
+            UPDATE `{CouchbaseConstants.TicketsCollection}` AS t
+            SET t.isCompleted = true
+            WHERE META(t).movieSessionsId IN (
+                SELECT RAW META(ms).id
+                FROM `{CouchbaseConstants.MovieSessionsCollection}` AS ms
+                JOIN `{CouchbaseConstants.MoviesCollection}` AS m on META(m).id = ms.movieId
+                WHERE STR_TO_MILLIS(ms.dateTime) + (m.durationInMinutes * 60000) < STR_TO_MILLIS(NOW_STR())
+                AND ms.isFinished = false
+            )";
+
+        await scope.QueryAsync<object>(query);
     }
 }

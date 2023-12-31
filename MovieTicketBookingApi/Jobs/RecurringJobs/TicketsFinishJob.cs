@@ -3,13 +3,13 @@ using Core.Interfaces.Repositories;
 
 namespace MovieTicketBookingApi.Jobs.RecurringJobs;
 
-public class MovieSessionFinishJob : IAsyncJob
+public class TicketsFinishJob : IAsyncJob
 {
-    private readonly IMovieSessionsRepository _repository;
+    private readonly ITicketsRepository _repository;
 
-    public MovieSessionFinishJob(IMovieSessionsRepository repository)
+    public TicketsFinishJob(ITicketsRepository repository)
     {
-        _repository = repository;
+        _repository = repository;   
     }
 
     public async Task ExecuteAsync(params object[] parameters) => await _repository.UpdateFinishedAsync();

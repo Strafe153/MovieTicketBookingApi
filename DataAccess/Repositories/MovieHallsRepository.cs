@@ -3,6 +3,7 @@ using Core.Extensions;
 using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
 using Core.Shared.Constants;
+using Couchbase.Query;
 
 namespace DataAccess.Repositories;
 
@@ -24,6 +25,11 @@ public class MovieHallsRepository : IMovieHallsRepository
     public async Task<IList<MovieHall>> GetAllAsync(int pageNumber, int pageSize)
     {
         var scope = await _bucketProvider.GetScopeAsync();
+
+        var queryOptions = new QueryOptions()
+            .Parameter("offset", (pageNumber - 1) * pageSize)
+            .Parameter("pageSize", pageSize);
+
         var query = $@"
             SELECT META(mh).id,
                    mh.name,
@@ -33,10 +39,10 @@ public class MovieHallsRepository : IMovieHallsRepository
             LEFT JOIN `{CouchbaseConstants.MovieSessionsCollection}` AS ms ON ms.movieHallId = META(mh).id
             GROUP BY mh
             ORDER BY mh.name, mh.numberOfSeats
-            OFFSET {(pageNumber - 1) * pageSize}
-            LIMIT {pageSize}";
+            OFFSET $offset
+            LIMIT $pageSize";
 
-        var queryResult = await scope.QueryAsync<MovieHall>(query);
+        var queryResult = await scope.QueryAsync<MovieHall>(query, queryOptions);
 
         return await queryResult.Rows.ToListAsync();
     }
@@ -44,6 +50,8 @@ public class MovieHallsRepository : IMovieHallsRepository
     public async Task<MovieHall> GetByIdAsync(string id)
     {
         var scope = await _bucketProvider.GetScopeAsync();
+        var queryOptions = new QueryOptions().Parameter("id", id);
+
         var query = $@"
             SELECT META(mh).id,
                    mh.name,
@@ -52,9 +60,9 @@ public class MovieHallsRepository : IMovieHallsRepository
             FROM `{CouchbaseConstants.MovieHallsCollection}` AS mh
             LEFT JOIN `{CouchbaseConstants.MovieSessionsCollection}` AS ms ON ms.movieHallId = META(mh).id
             GROUP BY mh
-            WHERE META(mh).id = 'id'";
+            WHERE META(mh).id = $id";
 
-        var queryResult = await scope.QueryAsync<MovieHall>(query);
+        var queryResult = await scope.QueryAsync<MovieHall>(query, queryOptions);
 
         return await queryResult.FirstOrDefaultAsync();
     }
