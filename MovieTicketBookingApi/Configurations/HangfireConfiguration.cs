@@ -23,7 +23,7 @@ public static class HangfireConfiguration
     {
         var hangfireConfiguration = configuration.GetSection(HangfireOptions.HangfireSectionName).Get<HangfireOptions>()!;
 
-        application.UseHangfireDashboard("/hangfire", new DashboardOptions
+        application.UseHangfireDashboard(options: new DashboardOptions
         {
             DashboardTitle = typeof(Program).Assembly.GetName().Name,
             Authorization = new[]

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.RateLimiting;
 using MovieTicketBookingApi.Configurations.ConfigurationModels;
-using System.Threading.RateLimiting;
 
 namespace MovieTicketBookingApi.Configurations;
 
