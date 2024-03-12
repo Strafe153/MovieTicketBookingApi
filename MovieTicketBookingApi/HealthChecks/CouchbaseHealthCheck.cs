@@ -1,4 +1,4 @@
-﻿using Core.Interfaces.BucketProviders;
+﻿using Domain.Interfaces.BucketProviders;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace MovieTicketBookingApi.HealthChecks;

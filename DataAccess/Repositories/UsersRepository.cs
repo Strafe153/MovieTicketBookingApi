@@ -1,8 +1,8 @@
-﻿using Core.Entities;
-using Core.Extensions;
-using Core.Interfaces.BucketProviders;
-using Core.Interfaces.Repositories;
-using Core.Shared.Constants;
+﻿using Domain.Entities;
+using Domain.Extensions;
+using Domain.Interfaces.BucketProviders;
+using Domain.Interfaces.Repositories;
+using Domain.Shared.Constants;
 using Couchbase.KeyValue;
 using Couchbase.Query;
 using System.Text.Json;

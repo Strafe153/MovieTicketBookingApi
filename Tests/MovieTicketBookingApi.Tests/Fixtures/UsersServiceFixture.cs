@@ -2,8 +2,8 @@
 using AutoFixture.AutoMoq;
 using AutoMapper;
 using Bogus;
-using Core.Interfaces.Helpers;
-using Core.Interfaces.Repositories;
+using Domain.Interfaces.Helpers;
+using Domain.Interfaces.Repositories;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Moq;
@@ -11,8 +11,8 @@ using MovieTicketBookingApi.AutoMapperProfiles;
 using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.Users;
 using MovieTicketBookingApi.Services;
-using Ticket = Core.Entities.Ticket;
-using User = Core.Entities.User;
+using Ticket = Domain.Entities.Ticket;
+using User = Domain.Entities.User;
 
 namespace MovieTicketBookingApi.Tests.Fixtures;
 

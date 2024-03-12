@@ -1,4 +1,4 @@
-﻿using Core.Shared.Constants;
+﻿using Domain.Shared.Constants;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;

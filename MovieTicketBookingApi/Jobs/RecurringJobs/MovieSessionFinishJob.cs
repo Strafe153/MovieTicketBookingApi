@@ -1,5 +1,5 @@
-﻿using Core.Interfaces.Jobs;
-using Core.Interfaces.Repositories;
+﻿using Domain.Interfaces.Jobs;
+using Domain.Interfaces.Repositories;
 
 namespace MovieTicketBookingApi.Jobs.RecurringJobs;
 

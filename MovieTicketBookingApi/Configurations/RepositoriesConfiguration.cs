@@ -1,4 +1,4 @@
-﻿using Core.Interfaces.Repositories;
+﻿using Domain.Interfaces.Repositories;
 using DataAccess.Repositories;
 
 namespace MovieTicketBookingApi.Configurations;

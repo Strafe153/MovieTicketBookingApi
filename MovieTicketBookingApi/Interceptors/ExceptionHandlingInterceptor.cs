@@ -1,4 +1,4 @@
-﻿using Core.Exceptions;
+﻿using Domain.Exceptions;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Status = Grpc.Core.Status;

@@ -2,8 +2,8 @@
 using AutoFixture.AutoMoq;
 using AutoMapper;
 using Bogus;
-using Core.Interfaces.Helpers;
-using Core.Interfaces.Repositories;
+using Domain.Interfaces.Helpers;
+using Domain.Interfaces.Repositories;
 using Grpc.Core;
 using Moq;
 using MovieTicketBookingApi.AutoMapperProfiles;
@@ -11,8 +11,8 @@ using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.Movies;
 using MovieTicketBookingApi.Protos.V1.Tickets;
 using MovieTicketBookingApi.Services;
-using MovieSession = Core.Entities.MovieSession;
-using Ticket = Core.Entities.Ticket;
+using MovieSession = Domain.Entities.MovieSession;
+using Ticket = Domain.Entities.Ticket;
 
 namespace MovieTicketBookingApi.Tests.Fixtures;
 

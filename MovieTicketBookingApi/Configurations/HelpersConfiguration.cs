@@ -1,7 +1,7 @@
-﻿using Core.Helpers;
-using Core.Interfaces.Helpers;
-using Core.Shared.Constants;
+﻿using Domain.Interfaces.Helpers;
+using Domain.Shared.Constants;
 using Microsoft.Extensions.Caching.Memory;
+using MovieTicketBookingApi.Helpers;
 
 namespace MovieTicketBookingApi.Configurations;
 

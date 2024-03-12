@@ -1,4 +1,4 @@
-﻿using Core.Shared.Constants;
+﻿using Domain.Shared.Constants;
 using Hangfire;
 using MovieTicketBookingApi.Jobs.RecurringJobs;
 

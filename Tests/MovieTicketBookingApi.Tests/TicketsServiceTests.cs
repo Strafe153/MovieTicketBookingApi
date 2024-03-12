@@ -3,8 +3,8 @@ using Moq;
 using MovieTicketBookingApi.Protos.V1.Tickets;
 using MovieTicketBookingApi.Tests.Fixtures;
 using Xunit;
-using MovieSession = Core.Entities.MovieSession;
-using Ticket = Core.Entities.Ticket;
+using MovieSession = Domain.Entities.MovieSession;
+using Ticket = Domain.Entities.Ticket;
 
 namespace MovieTicketBookingApi.Tests;
 

@@ -1,15 +1,15 @@
 ﻿using AutoMapper;
-using Core.Extensions;
-using Core.Interfaces.Helpers;
-using Core.Interfaces.Repositories;
-using Core.Shared.Constants;
+using Domain.Extensions;
+using Domain.Interfaces.Helpers;
+using Domain.Interfaces.Repositories;
+using Domain.Shared.Constants;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using MovieTicketBookingApi.Protos.Shared.Empty;
 using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.MovieHalls;
-using MovieHall = Core.Entities.MovieHall;
+using MovieHall = Domain.Entities.MovieHall;
 
 namespace MovieTicketBookingApi.Services;
 
