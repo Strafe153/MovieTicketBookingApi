@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Domain.Extensions;
 using Domain.Interfaces.Helpers;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
@@ -54,7 +53,7 @@ public class MovieHallsService : MovieHalls.MovieHallsBase
 
 		if (movieHall is null)
 		{
-			movieHall = await _repository.GetByIdOrThrowAsync(request.Id);
+			movieHall = await GetByIdOrThrowAsync(request.Id);
 			_cacheHelper.Set(key, movieHall);
 		}
 
@@ -73,7 +72,8 @@ public class MovieHallsService : MovieHalls.MovieHallsBase
 
 	public override async Task<EmptyReply> Update(UpdateMovieHallRequest request, ServerCallContext context)
 	{
-		var movieHall = await _repository.GetByIdOrThrowAsync(request.Id);
+		var movieHall = await _repository.GetByIdAsync(request.Id)
+			?? throw new NullReferenceException($"Movie hall with id '{request.Id}' does not exist.");
 
 		_mapper.Map(request, movieHall);
 		await _repository.UpdateAsync(movieHall);
@@ -83,9 +83,17 @@ public class MovieHallsService : MovieHalls.MovieHallsBase
 
 	public override async Task<EmptyReply> Delete(DeleteMovieHallRequest request, ServerCallContext context)
 	{
-		await _repository.GetByIdOrThrowAsync(request.Id);
+		await GetByIdOrThrowAsync(request.Id);
 		await _repository.DeleteAsync(request.Id);
 
 		return new EmptyReply();
+	}
+
+	private async Task<MovieHall> GetByIdOrThrowAsync(string id)
+	{
+		var entity = await _repository.GetByIdAsync(id)
+			?? throw new NullReferenceException($"Movie hall with id '{id}' does not exist.");
+
+		return entity;
 	}
 }

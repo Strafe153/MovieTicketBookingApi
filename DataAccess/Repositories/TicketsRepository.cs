@@ -81,13 +81,11 @@ public class TicketsRepository : ITicketsRepository
 		return await tickets.Rows.ToListAsync();
 	}
 
-	public async Task InsertAsync(Ticket entity)
+	public async Task InsertAsync(Ticket ticket)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
-		await collection.InsertAsync(entity.Id.ToString(), entity);
+		await collection.InsertAsync(ticket.Id.ToString(), ticket);
 	}
-
-	public Task UpdateAsync(Ticket entity) => throw new NullReferenceException();
 
 	public async Task UpdateFinishedAsync()
 	{
@@ -106,6 +104,4 @@ public class TicketsRepository : ITicketsRepository
 
 		await scope.QueryAsync<object>(query);
 	}
-
-	public Task DeleteAsync(string id) => throw new NotImplementedException();
 }

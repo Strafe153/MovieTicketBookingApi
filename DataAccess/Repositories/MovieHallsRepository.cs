@@ -71,15 +71,15 @@ public class MovieHallsRepository : IMovieHallsRepository
 		return await queryResult.FirstOrDefaultAsync();
 	}
 
-	public async Task InsertAsync(MovieHall entity)
+	public async Task InsertAsync(MovieHall movieHall)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
-		await collection.InsertAsync(entity.Id.ToString(), entity);
+		await collection.InsertAsync(movieHall.Id.ToString(), movieHall);
 	}
 
-	public async Task UpdateAsync(MovieHall entity)
+	public async Task UpdateAsync(MovieHall movieHall)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
-		await collection.ReplaceAsync(entity.Id.ToString(), entity);
+		await collection.ReplaceAsync(movieHall.Id.ToString(), movieHall);
 	}
 }

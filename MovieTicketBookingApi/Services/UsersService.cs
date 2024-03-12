@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Domain.Extensions;
 using Domain.Interfaces.Helpers;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
@@ -58,7 +57,7 @@ public class UsersService : Users.UsersBase
 
 		if (user is null)
 		{
-			user = await _repository.GetByIdOrThrowAsync(request.Id);
+			user = await GetByIdOrThrowAsync(request.Id);
 			_cacheHelper.Set(key, user);
 		}
 
@@ -95,7 +94,7 @@ public class UsersService : Users.UsersBase
 
 	public override async Task<EmptyReply> Update(UpdateUserRequest request, ServerCallContext context)
 	{
-		var user = await _repository.GetByIdOrThrowAsync(request.Id);
+		var user = await GetByIdOrThrowAsync(request.Id);
 
 		_mapper.Map(request, user);
 		await _repository.UpdateAsync(user);
@@ -105,9 +104,17 @@ public class UsersService : Users.UsersBase
 
 	public override async Task<EmptyReply> Delete(DeleteUserRequest request, ServerCallContext context)
 	{
-		await _repository.GetByIdOrThrowAsync(request.Id);
+		await GetByIdOrThrowAsync(request.Id);
 		await _repository.DeleteAsync(request.Id);
 
 		return new EmptyReply();
+	}
+
+	private async Task<User> GetByIdOrThrowAsync(string id)
+	{
+		var entity = await _repository.GetByIdAsync(id)
+			?? throw new NullReferenceException($"User with id '{id}' does not exist.");
+
+		return entity;
 	}
 }

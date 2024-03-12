@@ -83,17 +83,15 @@ public class MovieSessionsRepository : IMovieSessionsRepository
 		return await queryResult.FirstOrDefaultAsync();
 	}
 
-	public async Task InsertAsync(MovieSession entity)
+	public async Task InsertAsync(MovieSession movieSession)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieSessionsCollection);
-		await collection.InsertAsync(entity.Id.ToString(), entity);
+		await collection.InsertAsync(movieSession.Id.ToString(), movieSession);
 	}
 
-	public async Task UpdateAsync(MovieSession entity)
+	public async Task UpdateAsync(MovieSession movieSession)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieSessionsCollection);
-		await collection.ReplaceAsync(entity.Id.ToString(), entity);
+		await collection.ReplaceAsync(movieSession.Id.ToString(), movieSession);
 	}
-
-	public Task DeleteAsync(string id) => throw new NotImplementedException();
 }

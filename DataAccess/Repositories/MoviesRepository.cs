@@ -73,15 +73,15 @@ public class MoviesRepository : IMoviesRepository
 		return await queryResult.FirstOrDefaultAsync();
 	}
 
-	public async Task InsertAsync(Movie entity)
+	public async Task InsertAsync(Movie movie)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MoviesCollection);
-		await collection.InsertAsync(entity.Id.ToString(), entity);
+		await collection.InsertAsync(movie.Id.ToString(), movie);
 	}
 
-	public async Task UpdateAsync(Movie entity)
+	public async Task UpdateAsync(Movie movie)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MoviesCollection);
-		await collection.ReplaceAsync(entity.Id.ToString(), entity);
+		await collection.ReplaceAsync(movie.Id.ToString(), movie);
 	}
 }

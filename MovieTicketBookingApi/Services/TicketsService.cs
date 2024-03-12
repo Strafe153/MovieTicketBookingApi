@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Domain.Extensions;
 using Domain.Interfaces.Helpers;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
@@ -54,7 +53,7 @@ public class TicketsService : Tickets.TicketsBase
 
 		if (ticket is null)
 		{
-			ticket = await _ticketsRepository.GetByIdOrThrowAsync(request.Id);
+			ticket = await GetByIdOrThrowAsync(request.Id);
 			_cacheHelper.Set(key, ticket);
 		}
 
@@ -77,7 +76,7 @@ public class TicketsService : Tickets.TicketsBase
 
 	public override async Task<CreateTicketReply> Create(CreateTicketRequest request, ServerCallContext context)
 	{
-		var movieSession = await _movieSessionsRepository.GetByIdOrThrowAsync(request.MovieSessionId);
+		var movieSession = await GetByIdOrThrowAsync(request.MovieSessionId);
 
 		var ticket = _mapper.Map<Ticket>(request);
 		ticket.DateTime = movieSession.DateTime;
@@ -86,5 +85,13 @@ public class TicketsService : Tickets.TicketsBase
 		await _ticketsRepository.InsertAsync(ticket);
 
 		return _mapper.Map<CreateTicketReply>(ticket);
+	}
+
+	private async Task<Ticket> GetByIdOrThrowAsync(string id)
+	{
+		var entity = await _ticketsRepository.GetByIdAsync(id)
+			?? throw new NullReferenceException($"Ticket with id '{id}' does not exist.");
+
+		return entity;
 	}
 }

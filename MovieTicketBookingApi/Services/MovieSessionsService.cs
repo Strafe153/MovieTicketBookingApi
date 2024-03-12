@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Domain.Extensions;
 using Domain.Interfaces.Helpers;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
@@ -54,7 +53,7 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
 
 		if (movieSession is null)
 		{
-			movieSession = await _repository.GetByIdOrThrowAsync(request.Id);
+			movieSession = await GetByIdOrThrowAsync(request.Id);
 			_cacheHelper.Set(key, movieSession);
 		}
 
@@ -73,11 +72,19 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
 
 	public override async Task<EmptyReply> Update(UpdateMovieSessionRequest request, ServerCallContext context)
 	{
-		var movieSession = await _repository.GetByIdOrThrowAsync(request.Id);
+		var movieSession = await GetByIdOrThrowAsync(request.Id);
 
 		_mapper.Map(request, movieSession);
 		await _repository.UpdateAsync(movieSession);
 
 		return new EmptyReply();
+	}
+
+	private async Task<MovieSession> GetByIdOrThrowAsync(string id)
+	{
+		var entity = await _repository.GetByIdAsync(id)
+			?? throw new NullReferenceException($"Movie session with id '{id}' does not exist.");
+
+		return entity;
 	}
 }

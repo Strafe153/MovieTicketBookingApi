@@ -92,15 +92,15 @@ public class UsersRepository : IUsersRepository
 		return await queryResult.FirstOrDefaultAsync();
 	}
 
-	public async Task InsertAsync(User entity)
+	public async Task InsertAsync(User user)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
-		await collection.InsertAsync(entity.Id.ToString(), entity);
+		await collection.InsertAsync(user.Id.ToString(), user);
 	}
 
-	public async Task UpdateAsync(User entity)
+	public async Task UpdateAsync(User user)
 	{
 		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
-		await collection.ReplaceAsync(entity.Id.ToString(), entity);
+		await collection.ReplaceAsync(user.Id.ToString(), user);
 	}
 }

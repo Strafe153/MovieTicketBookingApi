@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Domain.Extensions;
 using Domain.Interfaces.Helpers;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
@@ -54,7 +53,7 @@ public class MoviesService : Movies.MoviesBase
 
 		if (movie is null)
 		{
-			movie = await _repository.GetByIdOrThrowAsync(request.Id);
+			movie = await GetByIdOrThrowAsync(request.Id);
 			_cacheHelper.Set(key, movie);
 		}
 
@@ -73,7 +72,7 @@ public class MoviesService : Movies.MoviesBase
 
 	public override async Task<EmptyReply> Update(UpdateMovieRequest request, ServerCallContext context)
 	{
-		var movie = await _repository.GetByIdOrThrowAsync(request.Id);
+		var movie = await GetByIdOrThrowAsync(request.Id);
 
 		_mapper.Map(request, movie);
 		await _repository.UpdateAsync(movie);
@@ -83,9 +82,17 @@ public class MoviesService : Movies.MoviesBase
 
 	public override async Task<EmptyReply> Delete(DeleteMovieRequest request, ServerCallContext context)
 	{
-		await _repository.GetByIdOrThrowAsync(request.Id);
+		await GetByIdOrThrowAsync(request.Id);
 		await _repository.DeleteAsync(request.Id);
 
 		return new EmptyReply();
+	}
+
+	private async Task<Movie> GetByIdOrThrowAsync(string id)
+	{
+		var entity = await _repository.GetByIdAsync(id)
+			?? throw new NullReferenceException($"Movie with id '{id}' does not exist.");
+
+		return entity;
 	}
 }
