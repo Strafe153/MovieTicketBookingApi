@@ -3,7 +3,9 @@ using Core.Extensions;
 using Core.Interfaces.BucketProviders;
 using Core.Interfaces.Repositories;
 using Core.Shared.Constants;
+using Couchbase.KeyValue;
 using Couchbase.Query;
+using System.Text.Json;
 
 namespace DataAccess.Repositories;
 
@@ -19,7 +21,9 @@ public class MovieHallsRepository : IMovieHallsRepository
     public async Task DeleteAsync(string id)
     {
         var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
-        await collection.RemoveAsync(id);
+
+        await collection.MutateInAsync(id, specs =>
+            specs.Upsert(JsonNamingPolicy.CamelCase.ConvertName(nameof(MovieHall.IsActive)), false));
     }
 
     public async Task<IList<MovieHall>> GetAllAsync(int pageNumber, int pageSize)

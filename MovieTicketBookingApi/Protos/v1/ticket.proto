@@ -11,7 +11,7 @@ import "Protos/shared/empty.proto";
 import "Protos/shared/paging.proto";
 
 service Tickets {
-	rpc GetAll (shared.paging.GetPaginatedDataRequest) returns (GetTicketsReply) {
+	rpc GetAll (shared.paging.GetPaginatedDataRequest) returns (GetAllTicketsReply) {
 		option (google.api.http) = {
 			get: "/v1/tickets"
 		};
@@ -23,7 +23,7 @@ service Tickets {
 		};
 	}
 
-	rpc GetByUserId (GetTicketsByUserIdRequest) returns (GetTicketsReply) {
+	rpc GetByUserId (GetTicketsByUserIdRequest) returns (GetAllTicketsReply) {
 		option (google.api.http) = {
 			get: "/v1/tickets/{userId}"
 		};
@@ -35,15 +35,9 @@ service Tickets {
 			body: "*"
 		};
 	}
-
-	rpc Delete (DeleteTicketRequest) returns (shared.empty.EmptyReply) {
-		option (google.api.http) = {
-			delete: "/v1/tickets/{id}"
-		};
-	}
 }
 
-message GetTicketsReply {
+message GetAllTicketsReply {
 	repeated Ticket tickets = 1;
 }
 
@@ -77,10 +71,6 @@ message CreateTicketReply {
 	int32 seat_number = 3;
 	string movie_session_id = 4;
 	string user_id = 5;
-}
-
-message DeleteTicketRequest {
-	string id = 1;
 }
 
 message Ticket {

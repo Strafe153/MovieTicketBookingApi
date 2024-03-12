@@ -7,13 +7,13 @@ public static class IRepositoryExtensions
 {
     public static async Task<T> GetByIdOrThrowAsync<T>(this IRepository<T> repository, string id)
     {
-        try
-        {
-            return await repository.GetByIdAsync(id);
-        }
-        catch (DocumentNotFoundException)
+        var entity = await repository.GetByIdAsync(id);
+
+        if (entity is null)
         {
             throw new NullReferenceException($"{typeof(T).Name} with id '{id}' does not exist.");
         }
+
+        return entity;
     }
 }

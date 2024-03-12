@@ -9,24 +9,18 @@ namespace DataAccess.Repositories;
 
 public class MovieSessionsRepository : IMovieSessionsRepository
 {
-    private readonly IMovieTicketBookingBucketProvider _bucketProvider;
+	private readonly IMovieTicketBookingBucketProvider _bucketProvider;
 
-    public MovieSessionsRepository(IMovieTicketBookingBucketProvider bucketProvider)
-    {
-        _bucketProvider = bucketProvider;
-    }
+	public MovieSessionsRepository(IMovieTicketBookingBucketProvider bucketProvider)
+	{
+		_bucketProvider = bucketProvider;
+	}
 
-    public async Task DeleteAsync(string id)
-    {
-        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieSessionsCollection);
-        await collection.RemoveAsync(id);
-    }
+	public async Task UpdateFinishedAsync()
+	{
+		var scope = await _bucketProvider.GetScopeAsync();
 
-    public async Task UpdateFinishedAsync()
-    {
-        var scope = await _bucketProvider.GetScopeAsync();
-
-        var query = $@"
+		var query = $@"
             UPDATE `{CouchbaseConstants.MovieSessionsCollection}` AS ms2
             SET ms2.isFinished = true
             WHERE META(ms2).id IN (
@@ -37,18 +31,18 @@ public class MovieSessionsRepository : IMovieSessionsRepository
                 AND ms.isFinished = false
             )";
 
-        await scope.QueryAsync<object>(query);
-    }
+		await scope.QueryAsync<object>(query);
+	}
 
-    public async Task<IList<MovieSession>> GetAllAsync(int pageNumber, int pageSize)
-    {
-        var scope = await _bucketProvider.GetScopeAsync();
+	public async Task<IList<MovieSession>> GetAllAsync(int pageNumber, int pageSize)
+	{
+		var scope = await _bucketProvider.GetScopeAsync();
 
-        var queryOptions = new QueryOptions()
-            .Parameter("offset", (pageNumber - 1) * pageSize)
-            .Parameter("pageSize", pageSize);
+		var queryOptions = new QueryOptions()
+			.Parameter("offset", (pageNumber - 1) * pageSize)
+			.Parameter("pageSize", pageSize);
 
-        var query = $@"
+		var query = $@"
             SELECT META(ms).id,
                    ms.dateTime,
                    ms.movieId,
@@ -62,17 +56,17 @@ public class MovieSessionsRepository : IMovieSessionsRepository
             OFFSET $offset
             LIMIT $pageSize";
 
-        var queryResult = await scope.QueryAsync<MovieSession>(query, queryOptions);
+		var queryResult = await scope.QueryAsync<MovieSession>(query, queryOptions);
 
-        return await queryResult.Rows.ToListAsync();
-    }
+		return await queryResult.Rows.ToListAsync();
+	}
 
-    public async Task<MovieSession> GetByIdAsync(string id)
-    {
-        var scope = await _bucketProvider.GetScopeAsync();
-        var queryOptions = new QueryOptions().Parameter("id", id);
+	public async Task<MovieSession> GetByIdAsync(string id)
+	{
+		var scope = await _bucketProvider.GetScopeAsync();
+		var queryOptions = new QueryOptions().Parameter("id", id);
 
-        var query = $@"
+		var query = $@"
             SELECT META(ms).id,
                    ms.dateTime,
                    ms.movieId,
@@ -84,20 +78,22 @@ public class MovieSessionsRepository : IMovieSessionsRepository
             GROUP BY ms
             WHERE META(ms).id = $id";
 
-        var queryResult = await scope.QueryAsync<MovieSession>(query, queryOptions);
+		var queryResult = await scope.QueryAsync<MovieSession>(query, queryOptions);
 
-        return await queryResult.FirstOrDefaultAsync();
-    }
+		return await queryResult.FirstOrDefaultAsync();
+	}
 
-    public async Task InsertAsync(MovieSession entity)
-    {
-        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieSessionsCollection);
-        await collection.InsertAsync(entity.Id.ToString(), entity);
-    }
+	public async Task InsertAsync(MovieSession entity)
+	{
+		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieSessionsCollection);
+		await collection.InsertAsync(entity.Id.ToString(), entity);
+	}
 
-    public async Task UpdateAsync(MovieSession entity)
-    {
-        var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieSessionsCollection);
-        await collection.ReplaceAsync(entity.Id.ToString(), entity);
-    }
+	public async Task UpdateAsync(MovieSession entity)
+	{
+		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieSessionsCollection);
+		await collection.ReplaceAsync(entity.Id.ToString(), entity);
+	}
+
+	public Task DeleteAsync(string id) => throw new NotImplementedException();
 }

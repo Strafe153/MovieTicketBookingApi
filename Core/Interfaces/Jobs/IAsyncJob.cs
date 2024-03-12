@@ -2,5 +2,5 @@
 
 public interface IAsyncJob
 {
-    Task ExecuteAsync(params object[] parameters);
+	Task ExecuteAsync(params object[] parameters);
 }

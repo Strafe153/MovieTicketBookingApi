@@ -2,5 +2,5 @@
 
 public static class CronConstants
 {
-    public const string Quarterly = "*/15 * * * *";
+	public const string Quarterly = "*/15 * * * *";
 }

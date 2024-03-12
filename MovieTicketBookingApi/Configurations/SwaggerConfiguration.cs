@@ -9,12 +9,15 @@ public static class SwaggerConfiguration
         services.AddGrpcSwagger();
         services.AddSwaggerGen(options =>
         {
-            var xmlFilePath = Path.Combine(AppContext.BaseDirectory, "MovieTicketBookingApi.xml");
+            const string ApiVersion = "v1";
 
-            options.SwaggerDoc("v1", new OpenApiInfo
+            var assemblyName = typeof(Program).Assembly.GetName().Name;
+            var xmlFilePath = Path.Combine(AppContext.BaseDirectory, $"{assemblyName}.xml");
+
+            options.SwaggerDoc(ApiVersion, new OpenApiInfo
             {
-                Title = "MovieTicketBookingApi",
-                Version = "v1"
+                Title = assemblyName,
+                Version = ApiVersion
             });
 
             options.IncludeXmlComments(xmlFilePath);

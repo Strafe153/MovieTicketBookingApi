@@ -6,9 +6,9 @@ namespace MovieTicketBookingApi.Jobs;
 
 public static class RecurringJobsRegistry
 {
-    public static void RegisterRecurringJobs()
-    {
-        RecurringJob.AddOrUpdate<MovieSessionFinishJob>(nameof(MovieSessionFinishJob), j => j.ExecuteAsync(), CronConstants.Quarterly);
-        RecurringJob.AddOrUpdate<TicketsFinishJob>(nameof(TicketsFinishJob), j => j.ExecuteAsync(), CronConstants.Quarterly);
-    }
+	public static void RegisterRecurringJobs()
+	{
+		RecurringJob.AddOrUpdate<MovieSessionFinishJob>(nameof(MovieSessionFinishJob), j => j.ExecuteAsync(), CronConstants.Quarterly);
+		RecurringJob.AddOrUpdate<TicketsFinishJob>(nameof(TicketsFinishJob), j => j.ExecuteAsync(), CronConstants.Quarterly);
+	}
 }

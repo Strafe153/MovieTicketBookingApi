@@ -11,8 +11,7 @@ namespace MovieTicketBookingApi.Configurations;
 
 public static class CouchbaseConfiguration
 {
-    public static void ConfigureCouchbase(this IServiceCollection services, IConfiguration configuration)
-    {
+    public static void ConfigureCouchbase(this IServiceCollection services, IConfiguration configuration) =>
         services
             .AddCouchbase(options =>
             {
@@ -31,7 +30,6 @@ public static class CouchbaseConfiguration
             })
             .AddCouchbaseBucket<IMovieTicketBookingBucketProvider>(CouchbaseConstants.BucketName)
             .AddSingleton<DatabaseSetupper>();
-    }
 
     public static async Task SetupDatabase(this WebApplication application)
     {
@@ -39,11 +37,9 @@ public static class CouchbaseConfiguration
         await dbSetupper.SetupDatabase();
     }
 
-    public static void ConfigureCouchbaseLifetime(this WebApplication application)
-    {
+    public static void ConfigureCouchbaseLifetime(this WebApplication application) =>
         application.Lifetime.ApplicationStopped.Register(async () =>
         {
             await application.Services.GetRequiredService<ICouchbaseLifetimeService>().CloseAsync();
         });
-    }
 }

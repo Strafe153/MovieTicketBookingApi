@@ -10,7 +10,7 @@ public class TicketsProfile : Profile
     {
         CreateMap<CoreTicket, Ticket>();
 
-        CreateMap<IList<CoreTicket>, GetTicketsReply>()
+        CreateMap<IList<CoreTicket>, GetAllTicketsReply>()
             .ForMember(dest => dest.Tickets, opt => opt.MapFrom(src => src));
 
         CreateMap<CoreTicket, GetTicketByIdReply>();
