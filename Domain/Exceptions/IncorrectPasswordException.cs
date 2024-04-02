@@ -1,6 +1,6 @@
 ﻿namespace Domain.Exceptions;
 
-public class IncorrectPasswordException : ApplicationException
+public class IncorrectPasswordException : Exception
 {
 	public IncorrectPasswordException()
 	{

@@ -6,7 +6,9 @@ namespace Domain.Extensions;
 
 public static class INamedBucketProviderExtensions
 {
-	public static async Task<ICouchbaseCollection> GetCollectionAsync(this INamedBucketProvider bucketProvider, string collectionName)
+	public static async Task<ICouchbaseCollection> GetCollectionAsync(
+		this INamedBucketProvider bucketProvider,
+		string collectionName)
 	{
 		var bucket = await bucketProvider.GetBucketAsync();
 		var collection = await bucket.CollectionAsync(collectionName);
