@@ -12,6 +12,6 @@ public class MovieSessionFinishJob : IAsyncJob
 		_repository = repository;
 	}
 
-	public async Task ExecuteAsync(params object[] parameters) => await _repository.UpdateFinishedAsync();
+	public Task ExecuteAsync() => _repository.UpdateFinishedAsync();
 }
 

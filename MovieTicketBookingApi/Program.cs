@@ -15,8 +15,11 @@ builder.Services.ConfigureCouchbase(builder.Configuration);
 
 builder.Services.ConfigureGrpc();
 builder.Services.AddMemoryCache();
-builder.Services.ConfigureHangfire();
 
+builder.Services.ConfigureHangfire();
+builder.Services.RegisterJobs();
+
+builder.Services.ConfigureFluentEmail(builder.Configuration);
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 
 builder.Services.ConfigureSwagger();
@@ -38,6 +41,6 @@ app.ConfigureCouchbaseLifetime();
 app.UseAuthenticatedHangfireDashboard(builder.Configuration);
 
 await app.SetupDatabase();
-RecurringJobsRegistry.RegisterRecurringJobs();
+HangfireConfiguration.RegisterRecurringJobs();
 
 app.Run();

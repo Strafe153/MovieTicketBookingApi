@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Domain.Interfaces.Helpers;
+using Domain.Interfaces.Jobs;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
 using Grpc.Core;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using MovieTicketBookingApi.Protos.Shared.Empty;
@@ -73,6 +75,8 @@ public class UsersService : Users.UsersBase
 		(user.PasswordHash, user.PasswordSalt) = _passwordHelper.GeneratePasswordHashAndSalt(request.Password);
 
 		await _repository.InsertAsync(user);
+
+		BackgroundJob.Enqueue<IRegistrationEmailJob>(j => j.ExecuteAsync(user.Email, new(user.FirstName, user.LastName)));
 
 		return _mapper.Map<RegisterUserReply>(user);
 	}

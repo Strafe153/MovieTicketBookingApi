@@ -31,10 +31,10 @@ public static class CouchbaseConfiguration
 			.AddCouchbaseBucket<IMovieTicketBookingBucketProvider>(CouchbaseConstants.BucketName)
 			.AddSingleton<DatabaseSetupper>();
 
-	public static async Task SetupDatabase(this WebApplication application)
+	public static Task SetupDatabase(this WebApplication application)
 	{
 		var dbSetupper = application.Services.GetRequiredService<DatabaseSetupper>();
-		await dbSetupper.SetupDatabase();
+		return dbSetupper.SetupDatabase();
 	}
 
 	public static void ConfigureCouchbaseLifetime(this WebApplication application) =>

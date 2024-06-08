@@ -12,6 +12,7 @@ public static class HelpersConfiguration
 		services.AddSingleton<IPasswordHelper, PasswordHelper>();
 		services.AddSingleton<ITokenHelper, TokenHelper>();
 		services.AddSingleton<ICacheHelper, CacheHelper>();
+		services.AddScoped<IEmailHelper, EmailHelper>();
 
 		services.Configure<MemoryCacheEntryOptions>(configuration.GetSection(CacheConstants.SettingsSectionName));
 	}
