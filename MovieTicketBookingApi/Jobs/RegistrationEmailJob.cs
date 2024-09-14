@@ -3,7 +3,7 @@ using Domain.Interfaces.Helpers;
 using Domain.Shared.Constants;
 using Quartz;
 
-namespace MovieTicketBookingApi.Jobs.FireAndForgetJobs;
+namespace MovieTicketBookingApi.Jobs;
 
 public class RegistrationEmailJob : IJob
 {

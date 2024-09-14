@@ -1,7 +1,7 @@
 ﻿using Domain.Interfaces.Repositories;
 using Quartz;
 
-namespace MovieTicketBookingApi.Jobs.RecurringJobs;
+namespace MovieTicketBookingApi.Jobs;
 
 public class MovieSessionFinishJob : IJob
 {

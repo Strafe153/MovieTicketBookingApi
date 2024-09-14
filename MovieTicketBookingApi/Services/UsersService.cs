@@ -5,7 +5,7 @@ using Domain.Shared.Constants;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using MovieTicketBookingApi.Jobs.FireAndForgetJobs;
+using MovieTicketBookingApi.Jobs;
 using MovieTicketBookingApi.Protos.Shared.Empty;
 using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.Users;

@@ -1,4 +1,4 @@
-﻿using MovieTicketBookingApi.Jobs.RecurringJobs;
+﻿using MovieTicketBookingApi.Jobs;
 using Quartz;
 using Quartz.AspNetCore;
 

@@ -64,6 +64,7 @@ public class UsersServiceFixture
 		PasswordHelper = fixture.Freeze<Mock<IPasswordHelper>>();
 		TokenHelper = fixture.Freeze<Mock<ITokenHelper>>();
 		CacheHelper = fixture.Freeze<Mock<ICacheHelper>>();
+		JobHelper = fixture.Freeze<Mock<IJobHelper>>();
 		ServerCallContext = fixture.Freeze<ServerCallContext>();
 
 		Mapper = new MapperConfiguration(options => options.AddProfile<UserProfile>()).CreateMapper();
@@ -73,6 +74,7 @@ public class UsersServiceFixture
 			PasswordHelper.Object,
 			TokenHelper.Object,
 			CacheHelper.Object,
+			JobHelper.Object,
 			Mapper);
 
 		User = userFaker.Generate();
@@ -88,6 +90,7 @@ public class UsersServiceFixture
 	public Mock<IPasswordHelper> PasswordHelper { get; }
 	public Mock<ITokenHelper> TokenHelper { get; }
 	public Mock<ICacheHelper> CacheHelper { get; }
+	public Mock<IJobHelper> JobHelper { get; set; }
 	public IMapper Mapper { get; }
 
 	public Guid Id { get; }
