@@ -1,6 +1,5 @@
 using MovieTicketBookingApi.AutoMapperProfiles;
 using MovieTicketBookingApi.Configurations;
-using MovieTicketBookingApi.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,8 +15,7 @@ builder.Services.ConfigureCouchbase(builder.Configuration);
 builder.Services.ConfigureGrpc();
 builder.Services.AddMemoryCache();
 
-builder.Services.ConfigureHangfire();
-builder.Services.RegisterJobs();
+builder.Services.ConfigureQuartz();
 
 builder.Services.ConfigureFluentEmail(builder.Configuration);
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
@@ -38,9 +36,6 @@ app.MapGrpcHealthChecksService();
 
 app.ConfigureCouchbaseLifetime();
 
-app.UseAuthenticatedHangfireDashboard(builder.Configuration);
-
 await app.SetupDatabase();
-HangfireConfiguration.RegisterRecurringJobs();
 
 app.Run();
