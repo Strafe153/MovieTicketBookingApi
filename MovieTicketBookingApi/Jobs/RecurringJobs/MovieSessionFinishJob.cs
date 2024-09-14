@@ -1,17 +1,16 @@
-﻿using Domain.Interfaces.Jobs;
-using Domain.Interfaces.Repositories;
+﻿using Domain.Interfaces.Repositories;
+using Quartz;
 
 namespace MovieTicketBookingApi.Jobs.RecurringJobs;
 
-public class MovieSessionFinishJob : IAsyncJob
+public class MovieSessionFinishJob : IJob
 {
-	private readonly IMovieSessionsRepository _repository;
+    private readonly IMovieSessionsRepository _repository;
 
-	public MovieSessionFinishJob(IMovieSessionsRepository repository)
-	{
-		_repository = repository;
-	}
+    public MovieSessionFinishJob(IMovieSessionsRepository repository)
+    {
+        _repository = repository;
+    }
 
-	public Task ExecuteAsync() => _repository.UpdateFinishedAsync();
+    public Task Execute(IJobExecutionContext context) => _repository.UpdateFinishedAsync();
 }
-

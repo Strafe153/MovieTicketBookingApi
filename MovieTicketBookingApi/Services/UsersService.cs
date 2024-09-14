@@ -1,15 +1,15 @@
 ﻿using AutoMapper;
 using Domain.Interfaces.Helpers;
-using Domain.Interfaces.Jobs;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
 using Grpc.Core;
-using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using MovieTicketBookingApi.Jobs.FireAndForgetJobs;
 using MovieTicketBookingApi.Protos.Shared.Empty;
 using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.Users;
+using Quartz;
 using User = Domain.Entities.User;
 
 namespace MovieTicketBookingApi.Services;
@@ -22,6 +22,7 @@ public class UsersService : Users.UsersBase
 	private readonly IPasswordHelper _passwordHelper;
 	private readonly ITokenHelper _tokenHelper;
 	private readonly ICacheHelper _cacheHelper;
+	private readonly IJobHelper _jobHelper;
 	private readonly IMapper _mapper;
 
 	public UsersService(
@@ -29,12 +30,14 @@ public class UsersService : Users.UsersBase
 		IPasswordHelper passwordHelper,
 		ITokenHelper tokenHelper,
 		ICacheHelper cacheHelper,
+		IJobHelper jobHelper,
 		IMapper mapper)
 	{
 		_repository = repository;
 		_passwordHelper = passwordHelper;
 		_tokenHelper = tokenHelper;
 		_cacheHelper = cacheHelper;
+		_jobHelper = jobHelper;
 		_mapper = mapper;
 	}
 
@@ -76,7 +79,14 @@ public class UsersService : Users.UsersBase
 
 		await _repository.InsertAsync(user);
 
-		BackgroundJob.Enqueue<IRegistrationEmailJob>(j => j.ExecuteAsync(user.Email, new(user.FirstName, user.LastName)));
+		JobDataMap dataMap = new()
+		{
+			{ JobConstants.RegistrationEmail.Email, user.Email },
+			{ JobConstants.RegistrationEmail.FirstName, user.FirstName },
+			{ JobConstants.RegistrationEmail.LastName, user.LastName }
+		};
+
+		await _jobHelper.RunOneOffJob<RegistrationEmailJob>(dataMap);
 
 		return _mapper.Map<RegisterUserReply>(user);
 	}

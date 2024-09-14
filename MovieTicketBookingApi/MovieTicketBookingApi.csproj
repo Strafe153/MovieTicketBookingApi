@@ -26,13 +26,10 @@
     <PackageReference Include="FluentEmail.Smtp" Version="3.0.2" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.61.0" />
     <PackageReference Include="Grpc.AspNetCore.HealthChecks" Version="2.61.0" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.11" />
-    <PackageReference Include="Hangfire.Core" Version="1.8.11" />
-    <PackageReference Include="Hangfire.Dashboard.Basic.Authentication" Version="7.0.1" />
-    <PackageReference Include="Hangfire.InMemory" Version="0.8.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.Swagger" Version="0.8.3" />
+    <PackageReference Include="Quartz.AspNetCore" Version="3.13.0" />
   </ItemGroup>
 
   <ItemGroup>
