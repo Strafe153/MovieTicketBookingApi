@@ -1,106 +1,121 @@
-﻿using Couchbase;
-using Couchbase.Management.Collections;
+﻿using System.Text.Json;
+using Couchbase;
 using Couchbase.Management.Query;
 using Domain.Entities;
 using Domain.Interfaces.BucketProviders;
 using Domain.Shared.Constants;
-using System.Text.Json;
 
 namespace DataAccess;
 
 public class DatabaseSetupper
 {
-	private readonly IMovieTicketBookingBucketProvider _bucketProvider;
+    private readonly IMovieTicketBookingBucketProvider _bucketProvider;
 
-	public DatabaseSetupper(IMovieTicketBookingBucketProvider bucketProvider)
-	{
-		_bucketProvider = bucketProvider;
-	}
+    public DatabaseSetupper(IMovieTicketBookingBucketProvider bucketProvider)
+    {
+        _bucketProvider = bucketProvider;
+    }
 
-	public async Task SetupDatabase()
-	{
-		try
-		{
-			var bucket = await _bucketProvider.GetBucketAsync();
+    public async Task SetupDatabase()
+    {
+        try
+        {
+            var bucket = await _bucketProvider.GetBucketAsync();
 
-			await ConfigureCollectionsAsync(bucket);
-			await ConfigurePrimaryIndexesAsync(bucket);
-			await ConfigureJoinIndexesAsync(bucket);
-		}
-		catch (Exception)
-		{
-			return;
-		}
-	}
+            await ConfigureCollectionsAsync(bucket);
+            await ConfigurePrimaryIndexesAsync(bucket);
+            await ConfigureJoinIndexesAsync(bucket);
+        }
+        catch
+        {
+            return;
+        }
+    }
 
-	private static async Task CreateCollectionAsync(
-		IBucket bucket,
-		string collectionName,
-		string scopeName = CouchbaseConstants.DefaultScope) =>
-			await bucket.Collections.CreateCollectionAsync(new CollectionSpec(scopeName, collectionName));
-	//private static async Task CreateCollectionAsync(
-	//	IBucket bucket,
-	//	string collectionName,
-	//	string scopeName = CouchbaseConstants.DefaultScope) =>
-	//		await bucket.Collections.CreateCollectionAsync(scopeName, collectionName, new CreateCollectionSettings());
+    #region Private methods
 
-	private static async Task CreatePrimaryIndexAsync(IBucket bucket, string collectionName, bool ignoreIfExists = true) =>
-		await (await bucket.CollectionAsync(collectionName)).QueryIndexes.CreatePrimaryIndexAsync(
-			new CreatePrimaryQueryIndexOptions().IndexName($"idx_{collectionName}_primary").IgnoreIfExists(ignoreIfExists));
+    private static Task CreateCollectionAsync(
+        IBucket bucket,
+        string collectionName,
+        string scopeName = CouchbaseConstants.DefaultScope) =>
+            bucket.Collections.CreateCollectionAsync(scopeName, collectionName, new());
 
-	private static async Task CreateJoinIndexAsync(
-		IBucket bucket,
-		string collectionName,
-		IEnumerable<string> fields,
-		bool ignoreIfExists = true) =>
-			await (await bucket.CollectionAsync(collectionName)).QueryIndexes.CreateIndexAsync(
-				$"idx_{collectionName}_{string.Join('_', fields)}",
-				fields,
-				new CreateQueryIndexOptions().IgnoreIfExists(ignoreIfExists));
+    private static async Task CreatePrimaryIndexAsync(IBucket bucket, string collectionName, bool ignoreIfExists = true)
+    {
+        var collection = await bucket.CollectionAsync(collectionName);
+        var indexName = $"idx_{collectionName}_primary";
 
-	private static async Task ConfigureCollectionsAsync(IBucket bucket) =>
-		await Task.WhenAll(CreateCollectionAsync(bucket, CouchbaseConstants.UsersCollection),
-			CreateCollectionAsync(bucket, CouchbaseConstants.MoviesCollection),
-			CreateCollectionAsync(bucket, CouchbaseConstants.MovieHallsCollection),
-			CreateCollectionAsync(bucket, CouchbaseConstants.TicketsCollection),
-			CreateCollectionAsync(bucket, CouchbaseConstants.MovieSessionsCollection));
+        var index = new CreatePrimaryQueryIndexOptions()
+            .IndexName(indexName)
+            .IgnoreIfExists(ignoreIfExists);
 
-	private static async Task ConfigurePrimaryIndexesAsync(IBucket bucket) =>
-		await Task.WhenAll(
-			CreatePrimaryIndexAsync(bucket, CouchbaseConstants.UsersCollection),
-			CreatePrimaryIndexAsync(bucket, CouchbaseConstants.MoviesCollection),
-			CreatePrimaryIndexAsync(bucket, CouchbaseConstants.MovieHallsCollection),
-			CreatePrimaryIndexAsync(bucket, CouchbaseConstants.TicketsCollection),
-			CreatePrimaryIndexAsync(bucket, CouchbaseConstants.MovieSessionsCollection));
+        await collection.QueryIndexes.CreatePrimaryIndexAsync(index);
+    }
 
-	private static async Task ConfigureJoinIndexesAsync(IBucket bucket) =>
-		await Task.WhenAll(
-			CreateJoinIndexAsync(
-				bucket,
-				CouchbaseConstants.MovieSessionsCollection,
-				new[]
-				{
-					JsonNamingPolicy.CamelCase.ConvertName(nameof(MovieSession.MovieHallId))
-				}),
-			CreateJoinIndexAsync(
-				bucket,
-				CouchbaseConstants.MovieSessionsCollection,
-				new[]
-				{
-					JsonNamingPolicy.CamelCase.ConvertName(nameof(MovieSession.MovieId))
-				}),
-			CreateJoinIndexAsync(
-				bucket,
-				CouchbaseConstants.TicketsCollection,
-				new[]
-				{
-					JsonNamingPolicy.CamelCase.ConvertName(nameof(Ticket.UserId))
-				}),
-			CreateJoinIndexAsync(
-				bucket,
-				CouchbaseConstants.TicketsCollection,
-				new[]
-				{
-					JsonNamingPolicy.CamelCase.ConvertName(nameof(Ticket.MovieSessionId))
-				}));
+    private static async Task CreateJoinIndexAsync(
+        IBucket bucket,
+        string collectionName,
+        IEnumerable<string> fields,
+        bool ignoreIfExists = true)
+    {
+        var collection = await bucket.CollectionAsync(collectionName);
+        var index = new CreateQueryIndexOptions().IgnoreIfExists(ignoreIfExists);
+
+        var joinedFields = string.Join('_', fields);
+        var indexName = $"idx_{collectionName}_{joinedFields}";
+
+        await collection.QueryIndexes.CreateIndexAsync(indexName, fields, index);
+    }
+
+    private static Task ConfigureCollectionsAsync(IBucket bucket)
+    {
+        Task[] collectionTasks = [
+            CreateCollectionAsync(bucket, CouchbaseConstants.UsersCollection),
+            CreateCollectionAsync(bucket, CouchbaseConstants.MoviesCollection),
+            CreateCollectionAsync(bucket, CouchbaseConstants.MovieHallsCollection),
+            CreateCollectionAsync(bucket, CouchbaseConstants.TicketsCollection),
+            CreateCollectionAsync(bucket, CouchbaseConstants.MovieSessionsCollection)
+        ];
+
+        return Task.WhenAll(collectionTasks);
+    }
+
+    private static Task ConfigurePrimaryIndexesAsync(IBucket bucket)
+    {
+        Task[] indexTasks = [
+            CreatePrimaryIndexAsync(bucket, CouchbaseConstants.UsersCollection),
+            CreatePrimaryIndexAsync(bucket, CouchbaseConstants.MoviesCollection),
+            CreatePrimaryIndexAsync(bucket, CouchbaseConstants.MovieHallsCollection),
+            CreatePrimaryIndexAsync(bucket, CouchbaseConstants.TicketsCollection),
+            CreatePrimaryIndexAsync(bucket, CouchbaseConstants.MovieSessionsCollection)
+        ];
+
+        return Task.WhenAll(indexTasks);
+    }
+
+    private static Task ConfigureJoinIndexesAsync(IBucket bucket)
+    {
+        Task[] joinIndexTasks = [
+            CreateJoinIndexAsync(
+                bucket,
+                CouchbaseConstants.MovieSessionsCollection,
+                [JsonNamingPolicy.CamelCase.ConvertName(nameof(MovieSession.MovieHallId))]),
+            CreateJoinIndexAsync(
+                bucket,
+                CouchbaseConstants.MovieSessionsCollection,
+                [JsonNamingPolicy.CamelCase.ConvertName(nameof(MovieSession.MovieId))]),
+            CreateJoinIndexAsync(
+                bucket,
+                CouchbaseConstants.TicketsCollection,
+                [JsonNamingPolicy.CamelCase.ConvertName(nameof(Ticket.UserId))]),
+            CreateJoinIndexAsync(
+                bucket,
+                CouchbaseConstants.TicketsCollection,
+                [JsonNamingPolicy.CamelCase.ConvertName(nameof(Ticket.MovieSessionId))])
+            ];
+
+        return Task.WhenAll(joinIndexTasks);
+    }
+
+    #endregion
 }
