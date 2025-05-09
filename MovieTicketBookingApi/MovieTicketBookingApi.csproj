@@ -43,7 +43,6 @@
 	<Protobuf Include="Protos\v1\movie_hall.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\v1\movie_session.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\v1\ticket.proto" GrpcServices="server" />
-	<Protobuf Include="Protos\v1\authentication.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\v1\health_checks.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\shared\empty.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\shared\paging.proto" GrpcServices="server" />
