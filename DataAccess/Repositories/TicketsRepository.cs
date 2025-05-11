@@ -1,30 +1,25 @@
-﻿using Domain.Entities;
+﻿using Couchbase.KeyValue;
+using Couchbase.Query;
+using Domain.Entities;
 using Domain.Extensions;
 using Domain.Interfaces.BucketProviders;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
-using Couchbase.Query;
 
 namespace DataAccess.Repositories;
 
-public class TicketsRepository : ITicketsRepository
+public class TicketsRepository(IMovieTicketBookingBucketProvider bucketProvider)
+    : Repository(bucketProvider), ITicketsRepository
 {
-	private readonly IMovieTicketBookingBucketProvider _bucketProvider;
+    public async Task<IList<Ticket>> GetAllAsync(int pageNumber, int pageSize)
+    {
+        var offset = GetOffset(pageNumber, pageSize);
 
-	public TicketsRepository(IMovieTicketBookingBucketProvider bucketProvider)
-	{
-		_bucketProvider = bucketProvider;
-	}
+        var queryOptions = new QueryOptions()
+            .Parameter("offset", offset)
+            .Parameter("pageSize", pageSize);
 
-	public async Task<IList<Ticket>> GetAllAsync(int pageNumber, int pageSize)
-	{
-		var scope = await (await _bucketProvider.GetBucketAsync()).ScopeAsync(CouchbaseConstants.DefaultScope);
-
-		var queryOptions = new QueryOptions()
-			.Parameter("offset", (pageNumber - 1) * pageSize)
-			.Parameter("pageSize", pageSize);
-
-		var query = $@"
+        var query = $@"
             SELECT META(t).id,
                    t.dateTime,
                    t.seatNumber,
@@ -35,35 +30,37 @@ public class TicketsRepository : ITicketsRepository
             OFFSET $offset
             LIMIT $pageSize";
 
-		var queryResult = await scope.QueryAsync<Ticket>(query, queryOptions);
+        var scope = await GetDefaultScopeAsync();
+        var queryResult = await scope.QueryAsync<Ticket>(query, queryOptions);
+        var tickets = await queryResult.Rows.ToListAsync();
 
-		return await queryResult.Rows.ToListAsync();
-	}
+        return tickets;
+    }
 
-	public async Task<Ticket> GetByIdAsync(string id)
-	{
-		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
-		var getResult = await collection.GetAsync(id);
-		var ticket = getResult.ContentAs<Ticket>();
+    public async Task<Ticket> GetByIdAsync(string id)
+    {
+        var collection = await GetCollectionAsync();
+        var getResult = await collection.GetAsync(id);
+        var ticket = getResult.ContentAs<Ticket>();
 
-		if (ticket is not null)
-		{
-			ticket.Id = Guid.Parse(id);
-		}
+        if (ticket is not null)
+        {
+            ticket.Id = Guid.Parse(id);
+        }
 
-		return ticket!;
-	}
+        return ticket!;
+    }
 
-	public async Task<IList<Ticket>> GetByUserIdAsync(int pageNumber, int pageSize, string userId)
-	{
-		var scope = await _bucketProvider.GetScopeAsync();
+    public async Task<IList<Ticket>> GetByUserIdAsync(int pageNumber, int pageSize, string userId)
+    {
+        var offset = GetOffset(pageNumber, pageSize);
 
-		var queryOptions = new QueryOptions()
-			.Parameter("userId", userId)
-			.Parameter("offset", (pageNumber - 1) * pageSize)
-			.Parameter("pageSize", pageSize);
+        var queryOptions = new QueryOptions()
+            .Parameter("userId", userId)
+            .Parameter("offset", offset)
+            .Parameter("pageSize", pageSize);
 
-		var query = $@"
+        var query = $@"
             SELECT META(t).id,
                    t.dateTime,
                    t.seatNumber,
@@ -76,22 +73,24 @@ public class TicketsRepository : ITicketsRepository
             OFFSET $offset
             LIMIT $pageSize";
 
-		var tickets = await scope.QueryAsync<Ticket>(query, queryOptions);
+        var scope = await GetScopeAsync();
+        var queryResult = await scope.QueryAsync<Ticket>(query, queryOptions);
+        var tickets = await queryResult.Rows.ToListAsync();
 
-		return await tickets.Rows.ToListAsync();
-	}
+        return tickets;
+    }
 
-	public async Task InsertAsync(Ticket ticket)
-	{
-		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
-		await collection.InsertAsync(ticket.Id.ToString(), ticket);
-	}
+    public async Task InsertAsync(Ticket ticket)
+    {
+        var collection = await GetCollectionAsync();
+        await collection.InsertAsync(ticket.Id.ToString(), ticket);
+    }
 
-	public async Task UpdateFinishedAsync()
-	{
-		var scope = await _bucketProvider.GetScopeAsync();
+    public async Task UpdateFinishedAsync()
+    {
+        var scope = await GetScopeAsync();
 
-		var query = $@"
+        var query = $@"
             UPDATE `{CouchbaseConstants.TicketsCollection}` AS t
             SET t.isCompleted = true
             WHERE META(t).movieSessionsId IN (
@@ -102,6 +101,9 @@ public class TicketsRepository : ITicketsRepository
                 AND ms.isFinished = false
             )";
 
-		await scope.QueryAsync<object>(query);
-	}
+        await scope.QueryAsync<object>(query);
+    }
+
+    protected override Task<ICouchbaseCollection> GetCollectionAsync() =>
+        _bucketProvider.GetCollectionAsync(CouchbaseConstants.TicketsCollection);
 }

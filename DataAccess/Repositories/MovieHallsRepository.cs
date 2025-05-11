@@ -1,40 +1,35 @@
-﻿using Domain.Entities;
+﻿using System.Text.Json;
+using Couchbase.KeyValue;
+using Couchbase.Query;
+using Domain.Entities;
 using Domain.Extensions;
 using Domain.Interfaces.BucketProviders;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
-using Couchbase.KeyValue;
-using Couchbase.Query;
-using System.Text.Json;
 
 namespace DataAccess.Repositories;
 
-public class MovieHallsRepository : IMovieHallsRepository
+public class MovieHallsRepository(IMovieTicketBookingBucketProvider bucketProvider)
+    : Repository(bucketProvider), IMovieHallsRepository
 {
-	private readonly IMovieTicketBookingBucketProvider _bucketProvider;
+    public async Task DeleteAsync(string id)
+    {
+        var isActive = JsonNamingPolicy.CamelCase.ConvertName(nameof(MovieHall.IsActive));
 
-	public MovieHallsRepository(IMovieTicketBookingBucketProvider bucketProvider)
-	{
-		_bucketProvider = bucketProvider;
-	}
+        var collection = await GetCollectionAsync();
 
-	public async Task DeleteAsync(string id)
-	{
-		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
+        await collection.MutateInAsync(id, specs => specs.Upsert(isActive, false));
+    }
 
-		await collection.MutateInAsync(id, specs =>
-			specs.Upsert(JsonNamingPolicy.CamelCase.ConvertName(nameof(MovieHall.IsActive)), false));
-	}
+    public async Task<IList<MovieHall>> GetAllAsync(int pageNumber, int pageSize)
+    {
+        var offset = GetOffset(pageNumber, pageSize);
 
-	public async Task<IList<MovieHall>> GetAllAsync(int pageNumber, int pageSize)
-	{
-		var scope = await _bucketProvider.GetScopeAsync();
+        var queryOptions = new QueryOptions()
+            .Parameter("offset", offset)
+            .Parameter("pageSize", pageSize);
 
-		var queryOptions = new QueryOptions()
-			.Parameter("offset", (pageNumber - 1) * pageSize)
-			.Parameter("pageSize", pageSize);
-
-		var query = $@"
+        var query = $@"
             SELECT META(mh).id,
                    mh.name,
                    mh.numberOfSeats,
@@ -46,17 +41,18 @@ public class MovieHallsRepository : IMovieHallsRepository
             OFFSET $offset
             LIMIT $pageSize";
 
-		var queryResult = await scope.QueryAsync<MovieHall>(query, queryOptions);
+        var scope = await GetScopeAsync();
+        var queryResult = await scope.QueryAsync<MovieHall>(query, queryOptions);
+        var movieHalls = await queryResult.Rows.ToListAsync();
 
-		return await queryResult.Rows.ToListAsync();
-	}
+        return movieHalls;
+    }
 
-	public async Task<MovieHall> GetByIdAsync(string id)
-	{
-		var scope = await _bucketProvider.GetScopeAsync();
-		var queryOptions = new QueryOptions().Parameter("id", id);
+    public async Task<MovieHall> GetByIdAsync(string id)
+    {
+        var queryOptions = new QueryOptions().Parameter("id", id);
 
-		var query = $@"
+        var query = $@"
             SELECT META(mh).id,
                    mh.name,
                    mh.numberOfSeats,
@@ -66,20 +62,25 @@ public class MovieHallsRepository : IMovieHallsRepository
             GROUP BY mh
             WHERE META(mh).id = $id";
 
-		var queryResult = await scope.QueryAsync<MovieHall>(query, queryOptions);
+        var scope = await GetScopeAsync();
+        var queryResult = await scope.QueryAsync<MovieHall>(query, queryOptions);
+        var movieHall = await queryResult.FirstOrDefaultAsync();
 
-		return await queryResult.FirstOrDefaultAsync();
-	}
+        return movieHall;
+    }
 
-	public async Task InsertAsync(MovieHall movieHall)
-	{
-		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
-		await collection.InsertAsync(movieHall.Id.ToString(), movieHall);
-	}
+    public async Task InsertAsync(MovieHall movieHall)
+    {
+        var collection = await GetCollectionAsync();
+        await collection.InsertAsync(movieHall.Id.ToString(), movieHall);
+    }
 
-	public async Task UpdateAsync(MovieHall movieHall)
-	{
-		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
-		await collection.ReplaceAsync(movieHall.Id.ToString(), movieHall);
-	}
+    public async Task UpdateAsync(MovieHall movieHall)
+    {
+        var collection = await GetCollectionAsync();
+        await collection.ReplaceAsync(movieHall.Id.ToString(), movieHall);
+    }
+
+    protected override Task<ICouchbaseCollection> GetCollectionAsync() =>
+        _bucketProvider.GetCollectionAsync(CouchbaseConstants.MovieHallsCollection);
 }

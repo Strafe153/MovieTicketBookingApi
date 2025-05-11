@@ -1,37 +1,32 @@
-﻿using Domain.Entities;
+﻿using System.Text.Json;
+using Couchbase.KeyValue;
+using Couchbase.Query;
+using Domain.Entities;
 using Domain.Extensions;
 using Domain.Interfaces.BucketProviders;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
-using Couchbase.KeyValue;
-using Couchbase.Query;
-using System.Text.Json;
 
 namespace DataAccess.Repositories;
 
-public class UsersRepository : IUsersRepository
+public class UsersRepository(IMovieTicketBookingBucketProvider bucketProvider)
+	: Repository(bucketProvider), IUsersRepository
 {
-	private readonly IMovieTicketBookingBucketProvider _bucketProvider;
-
-	public UsersRepository(IMovieTicketBookingBucketProvider bucketProvider)
+    public async Task DeleteAsync(string id)
 	{
-		_bucketProvider = bucketProvider;
-	}
+        var isActive = JsonNamingPolicy.CamelCase.ConvertName(nameof(User.IsActive));
 
-	public async Task DeleteAsync(string id)
-	{
-		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
+        var collection = await GetCollectionAsync();
 
-		await collection.MutateInAsync(id, specs =>
-			specs.Upsert(JsonNamingPolicy.CamelCase.ConvertName(nameof(User.IsActive)), false));
+		await collection.MutateInAsync(id, specs => specs.Upsert(isActive, false));
 	}
 
 	public async Task<IList<User>> GetAllAsync(int pageNumber, int pageSize)
 	{
-		var scope = await (await _bucketProvider.GetBucketAsync()).ScopeAsync(CouchbaseConstants.DefaultScope);
+		var offset = GetOffset(pageNumber, pageSize);
 
 		var queryOptions = new QueryOptions()
-			.Parameter("offset", (pageNumber - 1) * pageSize)
+			.Parameter("offset", offset)
 			.Parameter("pageSize", pageSize);
 
 		var query = $@"
@@ -48,14 +43,15 @@ public class UsersRepository : IUsersRepository
             OFFSET $offset
             LIMIT $pageSize";
 
-		var queryResult = await scope.QueryAsync<User>(query, queryOptions);
+        var scope = await GetDefaultScopeAsync();
+        var queryResult = await scope.QueryAsync<User>(query, queryOptions);
+		var users = await queryResult.Rows.ToListAsync();
 
-		return await queryResult.Rows.ToListAsync();
+		return users;
 	}
 
 	public async Task<User?> GetByEmailAsync(string email)
 	{
-		var scope = await _bucketProvider.GetScopeAsync();
 		var queryOptions = new QueryOptions().Parameter("email", email);
 
 		var query = $@"
@@ -66,13 +62,15 @@ public class UsersRepository : IUsersRepository
             FROM `{CouchbaseConstants.UsersCollection}` AS u
             WHERE u.email = $email";
 
-		var queryResult = await scope.QueryAsync<User>(query, queryOptions);
-		return await queryResult.FirstOrDefaultAsync();
+        var scope = await GetScopeAsync();
+        var queryResult = await scope.QueryAsync<User>(query, queryOptions);
+		var user = await queryResult.FirstOrDefaultAsync();
+
+		return user;
 	}
 
 	public async Task<User> GetByIdAsync(string id)
 	{
-		var scope = await (await _bucketProvider.GetBucketAsync()).ScopeAsync(CouchbaseConstants.DefaultScope);
 		var queryOptions = new QueryOptions().Parameter("id", id);
 
 		var query = $@"
@@ -87,20 +85,25 @@ public class UsersRepository : IUsersRepository
             WHERE META(u).id = $id
             GROUP BY u";
 
-		var queryResult = await scope.QueryAsync<User>(query, queryOptions);
+        var scope = await GetDefaultScopeAsync();
+        var queryResult = await scope.QueryAsync<User>(query, queryOptions);
+		var user = await queryResult.FirstOrDefaultAsync();
 
-		return await queryResult.FirstOrDefaultAsync();
+		return user;
 	}
 
 	public async Task InsertAsync(User user)
 	{
-		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
+		var collection = await GetCollectionAsync();
 		await collection.InsertAsync(user.Id.ToString(), user);
 	}
 
 	public async Task UpdateAsync(User user)
 	{
-		var collection = await _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
+		var collection = await GetCollectionAsync();
 		await collection.ReplaceAsync(user.Id.ToString(), user);
-	}
+    }
+
+    protected override Task<ICouchbaseCollection> GetCollectionAsync() =>
+        _bucketProvider.GetCollectionAsync(CouchbaseConstants.UsersCollection);
 }
