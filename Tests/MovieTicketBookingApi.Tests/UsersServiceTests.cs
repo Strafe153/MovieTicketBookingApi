@@ -102,7 +102,7 @@ public class UsersServiceTests : IClassFixture<UsersServiceFixture>
 			.ReturnsAsync((User)null!);
 
 		// Act
-		var result = async () => await _fixture.UsersService.GetById(_fixture.GetUserByIdRequest, _fixture.ServerCallContext);
+		var result = () => _fixture.UsersService.GetById(_fixture.GetUserByIdRequest, _fixture.ServerCallContext);
 
 		// Assert
 		await result.Should().ThrowAsync<NullReferenceException>();
@@ -142,7 +142,7 @@ public class UsersServiceTests : IClassFixture<UsersServiceFixture>
 			.ReturnsAsync((User)null!);
 
 		// Act
-		var result = async () => await _fixture.UsersService.Login(_fixture.LoginUserRequest, _fixture.ServerCallContext);
+		var result = () => _fixture.UsersService.Login(_fixture.LoginUserRequest, _fixture.ServerCallContext);
 
 		// Assert
 		await result.Should().ThrowAsync<NullReferenceException>();
@@ -157,7 +157,7 @@ public class UsersServiceTests : IClassFixture<UsersServiceFixture>
 			.ReturnsAsync(_fixture.User);
 
 		// Act
-		var result = async () => await _fixture.UsersService.Login(_fixture.LoginUserRequest, _fixture.ServerCallContext);
+		var result = () => _fixture.UsersService.Login(_fixture.LoginUserRequest, _fixture.ServerCallContext);
 
 		// Assert
 		await result.Should().ThrowAsync<IncorrectPasswordException>();

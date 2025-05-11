@@ -100,7 +100,7 @@ public class TicketsServiceTests : IClassFixture<TicketsServiceFixture>
 			.ReturnsAsync((Ticket)null!);
 
 		// Act
-		var result = async () => await _fixture.TicketsService.GetById(_fixture.GetTicketByIdRequest, _fixture.ServerCallContext);
+		var result = () => _fixture.TicketsService.GetById(_fixture.GetTicketByIdRequest, _fixture.ServerCallContext);
 
 		// Assert
 		await result.Should().ThrowAsync<NullReferenceException>();
@@ -130,7 +130,7 @@ public class TicketsServiceTests : IClassFixture<TicketsServiceFixture>
 			.ReturnsAsync((MovieSession)null!);
 
 		// Act
-		var result = async () => await _fixture.TicketsService.Create(_fixture.CreateTicketRequest, _fixture.ServerCallContext);
+		var result = () => _fixture.TicketsService.Create(_fixture.CreateTicketRequest, _fixture.ServerCallContext);
 
 		// Assert
 		await result.Should().ThrowAsync<NullReferenceException>();

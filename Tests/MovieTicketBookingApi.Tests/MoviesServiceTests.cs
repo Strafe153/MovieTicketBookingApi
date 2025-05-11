@@ -100,7 +100,7 @@ public class MoviesServiceTests : IClassFixture<MoviesServiceFixture>
 			.ReturnsAsync((Movie)null!);
 
 		// Act
-		var result = async () => await _fixture.MoviesService.GetById(_fixture.GetMovieByIdRequest, _fixture.ServerCallContext);
+		var result = () => _fixture.MoviesService.GetById(_fixture.GetMovieByIdRequest, _fixture.ServerCallContext);
 
 		// Assert
 		await result.Should().ThrowAsync<NullReferenceException>();
@@ -140,7 +140,7 @@ public class MoviesServiceTests : IClassFixture<MoviesServiceFixture>
 			.ReturnsAsync((Movie)null!);
 
 		// Act
-		var result = async () => await _fixture.MoviesService.Update(_fixture.UpdateMovieRequest, _fixture.ServerCallContext);
+		var result = () => _fixture.MoviesService.Update(_fixture.UpdateMovieRequest, _fixture.ServerCallContext);
 
 		// Assert
 		await result.Should().ThrowAsync<NullReferenceException>();
@@ -170,7 +170,7 @@ public class MoviesServiceTests : IClassFixture<MoviesServiceFixture>
 			.ReturnsAsync((Movie)null!);
 
 		// Act
-		var result = async () => await _fixture.MoviesService.Delete(_fixture.DeleteMovieRequest, _fixture.ServerCallContext);
+		var result = () => _fixture.MoviesService.Delete(_fixture.DeleteMovieRequest, _fixture.ServerCallContext);
 
 		// Assert
 		await result.Should().ThrowAsync<NullReferenceException>();
