@@ -7,8 +7,7 @@ option csharp_namespace = "MovieTicketBookingApi.Protos.V1.Tickets";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "Protos/google/api/annotations.proto";
-import "Protos/shared/empty.proto";
-import "Protos/shared/paging.proto";
+import "Protos/Shared/paging.proto";
 
 service Tickets {
 	rpc GetAll (shared.paging.GetPaginatedDataRequest) returns (GetAllTicketsReply) {

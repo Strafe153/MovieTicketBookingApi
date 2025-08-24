@@ -44,8 +44,8 @@
 	<Protobuf Include="Protos\v1\movie_session.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\v1\ticket.proto" GrpcServices="server" />
 	<Protobuf Include="Protos\v1\health_checks.proto" GrpcServices="server" />
-	<Protobuf Include="Protos\shared\empty.proto" GrpcServices="server" />
-	<Protobuf Include="Protos\shared\paging.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\Shared\empty.proto" GrpcServices="server" />
+	<Protobuf Include="Protos\Shared\paging.proto" GrpcServices="server" />
   </ItemGroup>
 
 </Project>

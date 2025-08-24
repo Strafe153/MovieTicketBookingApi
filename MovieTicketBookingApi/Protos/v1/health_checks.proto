@@ -5,7 +5,7 @@ package movie_ticket_booking_api.v1.health_checks;
 option csharp_namespace = "MovieTicketBookingApi.Protos.V1.HealthChecks";
 
 import "Protos/google/api/annotations.proto";
-import "Protos/shared/empty.proto";
+import "Protos/Shared/empty.proto";
 
 service HealthCheck {
 	rpc CheckHealth (shared.empty.EmptyRequest) returns (HealthCheckResponse) {
