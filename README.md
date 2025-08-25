@@ -2,10 +2,10 @@
 ### A gRPC Web Api for managing movies, sessions, tickets and visitors. The data is persisted in Couchbase.
 
 ## Functionality
-# User authentication and authorization
-# Email notification on registration
-# Movies, sessions, halls and tickets management
-# Automatic data cleanup via recurring jobs
+* User authentication and authorization
+* Email notification on registration
+* Movies, sessions, halls and tickets management
+* Automatic data cleanup via recurring jobs
 
 ## Dependencies
 * `AspNetCore.HealthChecks.UI.Client` - detailed health checks information
