@@ -34,7 +34,7 @@ services:
     environment:
       MP_MAX_MESSAGES: 5000
       MP_DATABASE: /data/mailpit.db
-      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH: test:S3c!r5t0
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
     networks:
       - couchbase_network
