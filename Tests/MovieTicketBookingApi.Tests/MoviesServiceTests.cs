@@ -1,178 +1,492 @@
-﻿using FluentAssertions;
+﻿using Domain.Shared.Constants;
 using Moq;
 using MovieTicketBookingApi.Protos.Shared.Empty;
+using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.Movies;
 using MovieTicketBookingApi.Tests.Fixtures;
 using Xunit;
+using DomainAgeRating = Domain.Enums.AgeRating;
 using Movie = Domain.Entities.Movie;
 
 namespace MovieTicketBookingApi.Tests;
 
-public class MoviesServiceTests : IClassFixture<MoviesServiceFixture>
+public class MoviesServiceTests(MoviesServiceFixture fixture) : IClassFixture<MoviesServiceFixture>
 {
-	private readonly MoviesServiceFixture _fixture;
-
-	public MoviesServiceTests(MoviesServiceFixture fixture)
-	{
-		_fixture = fixture;
-	}
-
 	[Fact]
 	public async Task GetAll_Should_ReturnGetAllMoviesReplyFromCache_WhenRequestIsValid()
 	{
-		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<IList<Movie>>(It.IsAny<string>()))
-			.Returns(_fixture.Movies);
+        // Arrange
+        var firstId = Guid.NewGuid();
+        var secondId = Guid.NewGuid();
 
-		// Act
-		var result = await _fixture.MoviesService.GetAll(_fixture.GetPaginatedDataRequest, _fixture.ServerCallContext);
+        List<Movie> movies = [
+            new()
+            {
+                Id = firstId,
+                Title = "The Phantom's Adventures",
+                DurationInMinutes = 124,
+                AgeRating = DomainAgeRating.PG13,
+                MovieSessions = [
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                        MovieId = firstId,
+                        MovieHallId = Guid.NewGuid(),
+                        Tickets = []
+                    }
+                ]
+            },
+            new()
+            {
+                Id = secondId,
+                Title = "Tricking Ghosts",
+                DurationInMinutes = 98,
+                AgeRating = DomainAgeRating.R,
+                MovieSessions = [
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        DateTime = new DateTime(2026, 10, 18, 10, 40, 0, DateTimeKind.Utc),
+                        MovieId = Guid.NewGuid(),
+                        MovieHallId = secondId,
+                        Tickets = []
+                    }
+                ]
+            }
+        ];
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetAllMoviesReply>();
-		result.Movies.Should().NotBeEmpty();
+        GetPaginatedDataRequest request = new()
+        {
+            PageNumber = 1,
+            PageSize = 5
+        };
+
+        var cacheKey =
+            $"{CacheConstants.MoviesPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<IList<Movie>>(cacheKey))
+            .Returns(movies);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetAll(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Movies);
+        Assert.True(result.Movies.All(h => h.MovieSessions.Count > 0));
 	}
 
 	[Fact]
 	public async Task GetAll_Should_ReturnGetAllMoviesReplyFromRepository_WhenRequestIsValid()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<IList<Movie>>(It.IsAny<string>()))
-			.Returns((IList<Movie>)null!);
+        var firstId = Guid.NewGuid();
+        var secondId = Guid.NewGuid();
+        var pageNumber = 1;
+        var pageSize = 5;
 
-		_fixture.MoviesRepository
-			.Setup(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()))
-			.ReturnsAsync(_fixture.Movies);
+        List<Movie> movies = [
+            new()
+            {
+                Id = firstId,
+                Title = "The Phantom's Adventures",
+                DurationInMinutes = 124,
+                AgeRating = DomainAgeRating.PG13,
+                MovieSessions = [
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                        MovieId = firstId,
+                        MovieHallId = Guid.NewGuid(),
+                        Tickets = []
+                    }
+                ]
+            },
+            new()
+            {
+                Id = secondId,
+                Title = "Tricking Ghosts",
+                DurationInMinutes = 98,
+                AgeRating = DomainAgeRating.R,
+                MovieSessions = [
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        DateTime = new DateTime(2026, 10, 18, 10, 40, 0, DateTimeKind.Utc),
+                        MovieId = Guid.NewGuid(),
+                        MovieHallId = secondId,
+                        Tickets = []
+                    }
+                ]
+            }
+        ];
 
-		// Act
-		var result = await _fixture.MoviesService.GetAll(_fixture.GetPaginatedDataRequest, _fixture.ServerCallContext);
+        GetPaginatedDataRequest request = new()
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetAllMoviesReply>();
-		result.Movies.Should().NotBeEmpty();
+        var cacheKey =
+            $"{CacheConstants.MoviesPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<IList<Movie>>(cacheKey))
+            .Returns((IList<Movie>)null!);
+
+        fixture.Repository
+            .Setup(h => h.GetAllAsync(pageNumber, pageSize))
+            .ReturnsAsync(movies);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetAll(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Movies);
+        Assert.True(result.Movies.All(h => h.MovieSessions.Count > 0));
 	}
 
 	[Fact]
 	public async Task GetById_Should_ReturnGetMovieByIdReplyFromCache_WhenMovieExists()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<Movie>(It.IsAny<string>()))
-			.Returns(_fixture.Movie);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		// Act
-		var result = await _fixture.MoviesService.GetById(_fixture.GetMovieByIdRequest, _fixture.ServerCallContext);
+        Movie movie = new()
+        {
+            Id = id,
+            Title = "The Phantom's Adventures",
+            DurationInMinutes = 124,
+            AgeRating = DomainAgeRating.PG13,
+            MovieSessions = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                    MovieId = id,
+                    MovieHallId = Guid.NewGuid(),
+                    Tickets = []
+                }
+            ]
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetMovieByIdReply>();
+        GetMovieByIdRequest request = new()
+        {
+            Id = idString
+        };
+
+        var cacheKey = $"{CacheConstants.MoviesPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<Movie>(cacheKey))
+            .Returns(movie);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(idString, result.Id);
+        Assert.Single(result.MovieSessions);
 	}
 
 	[Fact]
 	public async Task GetById_Should_ReturnGetMovieByIdReplyFromRepository_WhenMovieExists()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<Movie>(It.IsAny<string>()))
-			.Returns((Movie)null!);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		_fixture.MoviesRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync(_fixture.Movie);
+        Movie movie = new()
+        {
+            Id = id,
+            Title = "The Phantom's Adventures",
+            DurationInMinutes = 124,
+            AgeRating = DomainAgeRating.PG13,
+            MovieSessions = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                    MovieId = id,
+                    MovieHallId = Guid.NewGuid(),
+                    Tickets = []
+                }
+            ]
+        };
 
-		// Act
-		var result = await _fixture.MoviesService.GetById(_fixture.GetMovieByIdRequest, _fixture.ServerCallContext);
+        GetMovieByIdRequest request = new()
+        {
+            Id = idString
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetMovieByIdReply>();
+        var cacheKey = $"{CacheConstants.MoviesPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<Movie>(cacheKey))
+            .Returns((Movie)null!);
+
+        fixture.Repository
+            .Setup(h => h.GetByIdAsync(idString))
+            .ReturnsAsync(movie);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(idString, result.Id);
+        Assert.Single(result.MovieSessions);
 	}
 
 	[Fact]
 	public async Task GetById_Should_ThrowNullReferenceException_WhenMovieDoesNotExist()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<Movie>(It.IsAny<string>()))
-			.Returns((Movie)null!);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		_fixture.MoviesRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync((Movie)null!);
+        Movie movie = new()
+        {
+            Id = id,
+            Title = "The Phantom's Adventures",
+            DurationInMinutes = 124,
+            AgeRating = DomainAgeRating.PG13,
+            MovieSessions = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                    MovieId = id,
+                    MovieHallId = Guid.NewGuid(),
+                    Tickets = []
+                }
+            ]
+        };
 
-		// Act
-		var result = () => _fixture.MoviesService.GetById(_fixture.GetMovieByIdRequest, _fixture.ServerCallContext);
+        GetMovieByIdRequest request = new()
+        {
+            Id = Guid.NewGuid().ToString()
+        };
 
-		// Assert
-		await result.Should().ThrowAsync<NullReferenceException>();
+        var cacheKey = $"{CacheConstants.MoviesPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<Movie>(cacheKey))
+            .Returns((Movie)null!);
+
+        fixture.Repository
+            .Setup(h => h.GetByIdAsync(idString))
+            .ReturnsAsync(movie);
+
+        // Act
+        var sut = fixture.CreateSut();
+        Task<GetMovieByIdReply> result() => sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        await Assert.ThrowsAsync<NullReferenceException>(result);
 	}
 
 	[Fact]
 	public async Task Create_Should_ReturnCreateMovieReply_WhenRequestIsValid()
 	{
-		// Act
-		var result = await _fixture.MoviesService.Create(_fixture.CreateMovieRequest, _fixture.ServerCallContext);
+		// Arrange
+        CreateMovieRequest request = new()
+        {
+            Title = "The Phantom's Adventures",
+            DurationInMinutes = 124,
+            AgeRating = AgeRating.Pg13,
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<CreateMovieReply>();
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.Create(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotEmpty(result.Id);
+        Assert.Equal("The Phantom's Adventures", result.Title);
 	}
 
 	[Fact]
 	public async Task Update_Should_ReturnEmptyReply_WhenMovieExists()
 	{
 		// Arrange
-		_fixture.MoviesRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync(_fixture.Movie);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		// Act
-		var result = await _fixture.MoviesService.Update(_fixture.UpdateMovieRequest, _fixture.ServerCallContext);
+        Movie movie = new()
+        {
+            Id = id,
+            Title = "The Phantom's Adventures",
+            DurationInMinutes = 124,
+            AgeRating = DomainAgeRating.PG13,
+            MovieSessions = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                    MovieId = id,
+                    MovieHallId = Guid.NewGuid(),
+                    Tickets = []
+                }
+            ]
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<EmptyReply>();
+        UpdateMovieRequest request = new()
+        {
+            Id = idString,
+            Title = "Tricking Ghosts",
+            DurationInMinutes = 98,
+            AgeRating = AgeRating.R,
+        };
+
+        fixture.Repository
+            .Setup(r => r.GetByIdAsync(idString))
+            .ReturnsAsync(movie);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.Update(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<EmptyReply>(result);
 	}
 
 	[Fact]
 	public async Task Update_Should_ThrowNullReferenceException_WhenMovieDoesNotExist()
 	{
 		// Arrange
-		_fixture.MoviesRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync((Movie)null!);
+        var id = Guid.NewGuid();
 
-		// Act
-		var result = () => _fixture.MoviesService.Update(_fixture.UpdateMovieRequest, _fixture.ServerCallContext);
+        Movie movie = new()
+        {
+            Id = id,
+            Title = "The Phantom's Adventures",
+            DurationInMinutes = 124,
+            AgeRating = DomainAgeRating.PG13,
+            MovieSessions = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                    MovieId = id,
+                    MovieHallId = Guid.NewGuid(),
+                    Tickets = []
+                }
+            ]
+        };
 
-		// Assert
-		await result.Should().ThrowAsync<NullReferenceException>();
+        UpdateMovieRequest request = new()
+        {
+            Id = Guid.NewGuid().ToString(),
+            Title = "Tricking Ghosts",
+            DurationInMinutes = 98,
+            AgeRating = AgeRating.R,
+        };
+
+        fixture.Repository
+            .Setup(r => r.GetByIdAsync(id.ToString()))
+            .ReturnsAsync(movie);
+
+        // Act
+        var sut = fixture.CreateSut();
+        Task<EmptyReply> result() => sut.Update(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        await Assert.ThrowsAnyAsync<NullReferenceException>(result);
 	}
 
 	[Fact]
 	public async Task Delete_Should_ReturnEmptyReply_WhenMovieExists()
 	{
 		// Arrange
-		_fixture.MoviesRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync(_fixture.Movie);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		// Act
-		var result = await _fixture.MoviesService.Delete(_fixture.DeleteMovieRequest, _fixture.ServerCallContext);
+        Movie movie = new()
+        {
+            Id = id,
+            Title = "The Phantom's Adventures",
+            DurationInMinutes = 124,
+            AgeRating = DomainAgeRating.PG13,
+            MovieSessions = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                    MovieId = id,
+                    MovieHallId = Guid.NewGuid(),
+                    Tickets = []
+                }
+            ]
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<EmptyReply>();
+        DeleteMovieRequest request = new()
+        {
+            Id = idString
+        };
+
+        fixture.Repository
+            .Setup(r => r.GetByIdAsync(idString))
+            .ReturnsAsync(movie);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.Delete(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<EmptyReply>(result);
 	}
 
 	[Fact]
 	public async Task Delete_Should_ThrowNullReferenceException_WhenMovieDoesNotExist()
 	{
 		// Arrange
-		_fixture.MoviesRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync((Movie)null!);
+        var id = Guid.NewGuid();
 
-		// Act
-		var result = () => _fixture.MoviesService.Delete(_fixture.DeleteMovieRequest, _fixture.ServerCallContext);
+        Movie movie = new()
+        {
+            Id = id,
+            Title = "The Phantom's Adventures",
+            DurationInMinutes = 124,
+            AgeRating = DomainAgeRating.PG13,
+            MovieSessions = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    DateTime = new DateTime(2026, 10, 18, 14, 25, 0, DateTimeKind.Utc),
+                    MovieId = id,
+                    MovieHallId = Guid.NewGuid(),
+                    Tickets = []
+                }
+            ]
+        };
 
-		// Assert
-		await result.Should().ThrowAsync<NullReferenceException>();
+        DeleteMovieRequest request = new()
+        {
+            Id = Guid.NewGuid().ToString()
+        };
+
+        fixture.Repository
+            .Setup(r => r.GetByIdAsync(id.ToString()))
+            .ReturnsAsync(movie);
+
+        // Act
+        var sut = fixture.CreateSut();
+        Task<EmptyReply> result() => sut.Delete(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        await Assert.ThrowsAnyAsync<NullReferenceException>(result);
 	}
 }

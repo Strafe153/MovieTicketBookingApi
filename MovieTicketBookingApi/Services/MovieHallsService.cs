@@ -1,10 +1,10 @@
-﻿using AutoMapper;
-using Domain.Interfaces.Helpers;
+﻿using Domain.Interfaces.Helpers;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using MovieTicketBookingApi.Mappings;
 using MovieTicketBookingApi.Protos.Shared.Empty;
 using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.MovieHalls;
@@ -18,20 +18,19 @@ public class MovieHallsService : MovieHalls.MovieHallsBase
 {
 	private readonly IMovieHallsRepository _repository;
 	private readonly ICacheHelper _cacheHelper;
-	private readonly IMapper _mapper;
 
 	public MovieHallsService(
 		IMovieHallsRepository repository,
-		ICacheHelper cacheHelper,
-		IMapper mapper)
+		ICacheHelper cacheHelper)
 	{
 		_repository = repository;
 		_cacheHelper = cacheHelper;
-		_mapper = mapper;
 	}
 
 	[AllowAnonymous]
-	public override async Task<GetAllMovieHallsReply> GetAll(GetPaginatedDataRequest request, ServerCallContext context)
+	public override async Task<GetAllMovieHallsReply> GetAll(
+		GetPaginatedDataRequest request,
+		ServerCallContext context)
 	{
 		var key = $"{CacheConstants.MovieHallsPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
 		var movieHalls = _cacheHelper.Get<IList<MovieHall>>(key);
@@ -42,11 +41,13 @@ public class MovieHallsService : MovieHalls.MovieHallsBase
 			_cacheHelper.Set(key, movieHalls);
 		}
 
-		return _mapper.Map<GetAllMovieHallsReply>(movieHalls);
+		return movieHalls.ToReply();
 	}
 
 	[AllowAnonymous]
-	public override async Task<GetMovieHallByIdReply> GetById(GetMovieHallByIdRequest request, ServerCallContext context)
+	public override async Task<GetMovieHallByIdReply> GetById(
+		GetMovieHallByIdRequest request,
+		ServerCallContext context)
 	{
 		var key = $"{CacheConstants.MovieHallsPrefix}:{request.Id}";
 		var movieHall = _cacheHelper.Get<MovieHall>(key);
@@ -57,31 +58,37 @@ public class MovieHallsService : MovieHalls.MovieHallsBase
 			_cacheHelper.Set(key, movieHall);
 		}
 
-		return _mapper.Map<GetMovieHallByIdReply>(movieHall);
+		return movieHall.ToGetByIdReply();
 	}
 
-	public override async Task<CreateMovieHallReply> Create(CreateMovieHallRequest request, ServerCallContext context)
+	public override async Task<CreateMovieHallReply> Create(
+		CreateMovieHallRequest request,
+		ServerCallContext context)
 	{
-		var movieHall = _mapper.Map<MovieHall>(request);
-		movieHall.Id = Guid.NewGuid();
+		var movieHall = request.ToMovieHall();
 
+		movieHall.Id = Guid.NewGuid();
 		await _repository.InsertAsync(movieHall);
 
-		return _mapper.Map<CreateMovieHallReply>(movieHall);
+		return movieHall.ToCreateReply();
 	}
 
-	public override async Task<EmptyReply> Update(UpdateMovieHallRequest request, ServerCallContext context)
+	public override async Task<EmptyReply> Update(
+		UpdateMovieHallRequest request,
+		ServerCallContext context)
 	{
 		var movieHall = await _repository.GetByIdAsync(request.Id)
 			?? throw new NullReferenceException($"Movie hall with id '{request.Id}' does not exist.");
 
-		_mapper.Map(request, movieHall);
+		request.Update(movieHall);
 		await _repository.UpdateAsync(movieHall);
 
 		return new EmptyReply();
 	}
 
-	public override async Task<EmptyReply> Delete(DeleteMovieHallRequest request, ServerCallContext context)
+	public override async Task<EmptyReply> Delete(
+		DeleteMovieHallRequest request,
+		ServerCallContext context)
 	{
 		await GetByIdOrThrowAsync(request.Id);
 		await _repository.DeleteAsync(request.Id);

@@ -21,7 +21,6 @@ public class TicketsRepository(IMovieTicketBookingBucketProvider bucketProvider)
 
         var query = $@"
             SELECT META(t).id,
-                   t.dateTime,
                    t.seatNumber,
                    t.movieSessionId,
                    t.userId
@@ -62,14 +61,13 @@ public class TicketsRepository(IMovieTicketBookingBucketProvider bucketProvider)
 
         var query = $@"
             SELECT META(t).id,
-                   t.dateTime,
                    t.seatNumber,
                    t.movieSessionId,
                    t.userId
             FROM `{CouchbaseConstants.TicketsCollection}` AS t
             WHERE t.userId = $userId
                   AND t.isCompleted = false
-            ORDER BY t.dateTime, t.seatNumber
+            ORDER BY t.seatNumber
             OFFSET $offset
             LIMIT $pageSize";
 

@@ -1,165 +1,605 @@
-﻿using Domain.Exceptions;
-using FluentAssertions;
+﻿using System.Security.Cryptography;
+using Domain.Entities;
+using Domain.Shared;
+using Domain.Shared.Constants;
+using Google.Protobuf.WellKnownTypes;
+using Microsoft.Extensions.Options;
 using Moq;
+using MovieTicketBookingApi.Helpers;
+using MovieTicketBookingApi.Protos.Shared.Empty;
+using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.Users;
 using MovieTicketBookingApi.Tests.Fixtures;
 using Xunit;
+using DateTime = System.DateTime;
 using User = Domain.Entities.User;
 
 namespace MovieTicketBookingApi.Tests;
 
-public class UsersServiceTests : IClassFixture<UsersServiceFixture>
+public class UsersServiceTests(UsersServiceFixture fixture) : IClassFixture<UsersServiceFixture>
 {
-	private readonly UsersServiceFixture _fixture;
-
-	public UsersServiceTests(UsersServiceFixture fixture)
-	{
-		_fixture = fixture;
-	}
-
 	[Fact]
 	public async Task GetAll_Should_ReturnGetAllUsersReplyFromCache_WhenRequestIsValid()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<IList<User>>(It.IsAny<string>()))
-			.Returns(_fixture.Users);
+        var firstId = Guid.NewGuid();
+        var secondId = Guid.NewGuid();
 
-		// Act
-		var result = await _fixture.UsersService.GetAll(_fixture.GetPaginatedDataRequest, _fixture.ServerCallContext);
+        List<User> users = [
+            new()
+            {
+                Id = firstId,
+                FirstName = "Ryuji",
+                LastName = "Sakamoto",
+                Email = "phantom_skull@thieves.com",
+                BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+                Tickets = [
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        SeatNumber = 1,
+                        MovieSessionId = Guid.NewGuid(),
+                        UserId = firstId
+                    }
+                ]
+            },
+            new()
+            {
+                Id = secondId,
+                FirstName = "Yusuke",
+                LastName = "Kitagawa",
+                Email = "fox@thieves.com",
+                BirthDate = new DateTime(2000, 08, 30, 0, 0, 0, DateTimeKind.Utc),
+                Tickets = [
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        SeatNumber = 1,
+                        MovieSessionId = Guid.NewGuid(),
+                        UserId = secondId
+                    }
+                ]
+            }
+        ];
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetAllUsersReply>();
-		result.Users.Should().NotBeEmpty();
+        GetPaginatedDataRequest request = new()
+        {
+            PageNumber = 1,
+            PageSize = 5
+        };
+
+        var cacheKey =
+            $"{CacheConstants.UsersPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<IList<User>>(cacheKey))
+            .Returns(users);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetAll(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Users);
+        Assert.True(result.Users.All(h => h.Tickets.Count > 0));
 	}
 
 	[Fact]
 	public async Task GetAll_Should_ReturnGetAllUsersReplyFromRepository_WhenRequestIsValid()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<IList<User>>(It.IsAny<string>()))
-			.Returns((IList<User>)null!);
+        var firstId = Guid.NewGuid();
+        var secondId = Guid.NewGuid();
+        var pageNumber = 1;
+        var pageSize = 5;
 
-		_fixture.UsersRepository
-			.Setup(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()))
-			.ReturnsAsync(_fixture.Users);
+        List<User> users = [
+            new()
+            {
+                Id = firstId,
+                FirstName = "Ryuji",
+                LastName = "Sakamoto",
+                Email = "phantom_skull@thieves.com",
+                BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+                Tickets = [
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        SeatNumber = 1,
+                        MovieSessionId = Guid.NewGuid(),
+                        UserId = firstId
+                    }
+                ]
+            },
+            new()
+            {
+                Id = secondId,
+                FirstName = "Yusuke",
+                LastName = "Kitagawa",
+                Email = "fox@thieves.com",
+                BirthDate = new DateTime(2000, 08, 30, 0, 0, 0, DateTimeKind.Utc),
+                Tickets = [
+                    new()
+                    {
+                        Id = Guid.NewGuid(),
+                        SeatNumber = 1,
+                        MovieSessionId = Guid.NewGuid(),
+                        UserId = secondId
+                    }
+                ]
+            }
+        ];
 
-		// Act
-		var result = await _fixture.UsersService.GetAll(_fixture.GetPaginatedDataRequest, _fixture.ServerCallContext);
+        GetPaginatedDataRequest request = new()
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetAllUsersReply>();
-		result.Users.Should().NotBeEmpty();
+        var cacheKey =
+            $"{CacheConstants.UsersPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<IList<User>>(cacheKey))
+            .Returns((IList<User>)null!);
+
+        fixture.Repository
+            .Setup(h => h.GetAllAsync(pageNumber, pageSize))
+            .ReturnsAsync(users);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetAll(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Users);
+        Assert.True(result.Users.All(h => h.Tickets.Count > 0));
 	}
 
 	[Fact]
 	public async Task GetById_Should_ReturnGetUserByIdReplyFromCache_WhenUserExists()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<User>(It.IsAny<string>()))
-			.Returns(_fixture.User);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		// Act
-		var result = await _fixture.UsersService.GetById(_fixture.GetUserByIdRequest, _fixture.ServerCallContext);
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = "phantom_skull@thieves.com",
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetUserbyIdReply>();
-		result.Tickets.Should().NotBeEmpty();
+        GetUserByIdRequest request = new()
+        {
+            Id = idString
+        };
+
+        var cacheKey = $"{CacheConstants.UsersPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<User>(cacheKey))
+            .Returns(user);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(idString, result.Id);
+        Assert.Single(result.Tickets);
 	}
 
 	[Fact]
 	public async Task GetById_Should_ReturnGetUserByIdReplyFromRepository_WhenUserExists()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<User>(It.IsAny<string>()))
-			.Returns((User)null!);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		_fixture.UsersRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync(_fixture.User);
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = "phantom_skull@thieves.com",
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
 
-		// Act
-		var result = await _fixture.UsersService.GetById(_fixture.GetUserByIdRequest, _fixture.ServerCallContext);
+        GetUserByIdRequest request = new()
+        {
+            Id = idString
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetUserbyIdReply>();
-		result.Tickets.Should().NotBeEmpty();
+        var cacheKey = $"{CacheConstants.UsersPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<User>(cacheKey))
+            .Returns((User)null!);
+
+        fixture.Repository
+            .Setup(h => h.GetByIdAsync(idString))
+            .ReturnsAsync(user);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(idString, result.Id);
+        Assert.Single(result.Tickets);
 	}
 
 	[Fact]
 	public async Task GetById_Should_ThrowNullReferenceException_WhenTicketDoesNotExist()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<User>(It.IsAny<string>()))
-			.Returns((User)null!);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		_fixture.UsersRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync((User)null!);
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = "phantom_skull@thieves.com",
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
 
-		// Act
-		var result = () => _fixture.UsersService.GetById(_fixture.GetUserByIdRequest, _fixture.ServerCallContext);
+        GetUserByIdRequest request = new()
+        {
+            Id = Guid.NewGuid().ToString()
+        };
 
-		// Assert
-		await result.Should().ThrowAsync<NullReferenceException>();
-	}
+        var cacheKey = $"{CacheConstants.UsersPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<User>(cacheKey))
+            .Returns((User)null!);
+
+        fixture.Repository
+            .Setup(h => h.GetByIdAsync(idString))
+            .ReturnsAsync(user);
+
+        // Act
+        var sut = fixture.CreateSut();
+        Task<GetUserbyIdReply> result() => sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        await Assert.ThrowsAsync<NullReferenceException>(result);
+    }
 
 	[Fact]
 	public async Task Register_Should_ReturnRegisterUserReply_WhenRequestIsValid()
 	{
+        // Arrange
+        RegisterUserRequest request = new()
+        {
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = "phantom_skull@thieves.com",
+            BirthDate = Timestamp.FromDateTime(new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc)),
+            Password = "qWer5678*("
+        };
+
 		// Act
-		var result = await _fixture.UsersService.Register(_fixture.RegisterUserRequest, _fixture.ServerCallContext);
+        var sut = fixture.CreateSut();
+		var result = await sut.Register(request, fixture.ServerCallContext.Object);
 
 		// Assert
-		result.Should().NotBeNull().And.BeOfType<RegisterUserReply>();
+        Assert.NotNull(result);
+        Assert.Equal("Ryuji", result.FirstName);
+        Assert.Equal("phantom_skull@thieves.com", result.Email);
 	}
 
 	[Fact]
 	public async Task Login_Should_ReturnLoginUserReply_WhenUserExists()
 	{
 		// Arrange
-		_fixture.UsersRepository
-			.Setup(r => r.GetByEmailAsync(It.IsAny<string>()))
-			.ReturnsAsync(_fixture.User);
+        var id = Guid.NewGuid();
+        var email = "phantom_skull@thieves.com";
+        var password = "qWer5678*(";
+
+        PasswordHelper passwordHelper = new();
+        var (hash, salt) = passwordHelper.GeneratePasswordHashAndSalt(password);
+
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = email,
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
+
+        LoginUserRequest request = new()
+        {
+            Email = email,
+            Password = password
+        };
+
+		fixture.Repository
+			.Setup(r => r.GetByEmailAsync(email))
+			.ReturnsAsync(user);
+
+        fixture.TokenHelper
+            .Setup(h => h.GenerateAccessToken(user))
+            .Returns(Guid.NewGuid().ToString());
 
 		// Act
-		var result = await _fixture.UsersService.Login(_fixture.LoginUserRequest, _fixture.ServerCallContext);
+        var sut = fixture.CreateSut();
+		var result = await sut.Login(request, fixture.ServerCallContext.Object);
 
 		// Assert
-		result.Should().NotBeNull().And.BeOfType<LoginUserReply>();
+		Assert.NotEmpty(result.AccessToken);
 	}
 
 	[Fact]
 	public async Task Login_Should_ThrowNullReferenceException_WhenUserDoesNotExist()
 	{
 		// Arrange
-		_fixture.UsersRepository
-			.Setup(r => r.GetByEmailAsync(It.IsAny<string>()))
-			.ReturnsAsync((User)null!);
+        var id = Guid.NewGuid();
+        var email = "phantom_skull@thieves.com";
+        var password = "qWer5678*(";
+
+        PasswordHelper passwordHelper = new();
+        var (hash, salt) = passwordHelper.GeneratePasswordHashAndSalt(password);
+
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = email,
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            PasswordHash = hash,
+            PasswordSalt = salt,
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
+
+        LoginUserRequest request = new()
+        {
+            Email = "fox@thieves.com",
+            Password = password
+        };
+
+		fixture.Repository
+			.Setup(r => r.GetByEmailAsync(email))
+			.ReturnsAsync(user);
 
 		// Act
-		var result = () => _fixture.UsersService.Login(_fixture.LoginUserRequest, _fixture.ServerCallContext);
+        var sut = fixture.CreateSut();
+        Task<LoginUserReply> result() => sut.Login(request, fixture.ServerCallContext.Object);
 
-		// Assert
-		await result.Should().ThrowAsync<NullReferenceException>();
+        // Assert
+        await Assert.ThrowsAsync<NullReferenceException>(result);
+    }
+
+	[Fact]
+	public async Task Update_Should_ReturnEmptyReply_WhenUserExists()
+	{
+		// Arrange
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
+
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = "phantom_skull@thieves.com",
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
+
+        UpdateUserRequest request = new()
+        {
+            Id = idString,
+            FirstName = "Yusuke",
+            LastName = "Kitagawa",
+            BirthDate = Timestamp.FromDateTime(new DateTime(2000, 08, 30, 0, 0, 0, DateTimeKind.Utc))
+        };
+
+        fixture.Repository
+            .Setup(r => r.GetByIdAsync(idString))
+            .ReturnsAsync(user);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.Update(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<EmptyReply>(result);
 	}
 
 	[Fact]
-	public async Task Login_Should_ThrowIncorrectPasswordException_WhenPasswordIsIncorrect()
+	public async Task Update_Should_ThrowNullReferenceException_WhenUserDoesNotExist()
 	{
 		// Arrange
-		_fixture.UsersRepository
-			.Setup(r => r.GetByEmailAsync(It.IsAny<string>()))
-			.ReturnsAsync(_fixture.User);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		// Act
-		var result = () => _fixture.UsersService.Login(_fixture.LoginUserRequest, _fixture.ServerCallContext);
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = "phantom_skull@thieves.com",
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
 
-		// Assert
-		await result.Should().ThrowAsync<IncorrectPasswordException>();
+        UpdateUserRequest request = new()
+        {
+            Id = Guid.NewGuid().ToString(),
+            FirstName = "Yusuke",
+            LastName = "Kitagawa",
+            BirthDate = Timestamp.FromDateTime(new DateTime(2000, 08, 30, 0, 0, 0, DateTimeKind.Utc))
+        };
+
+        fixture.Repository
+            .Setup(r => r.GetByIdAsync(idString))
+            .ReturnsAsync(user);
+
+        // Act
+        var sut = fixture.CreateSut();
+        Task<EmptyReply> result() => sut.Update(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        await Assert.ThrowsAsync<NullReferenceException>(result);
+    }
+
+	[Fact]
+	public async Task Delete_Should_ReturnEmptyReply_WhenUserExists()
+	{
+		// Arrange
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
+
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = "phantom_skull@thieves.com",
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
+
+        DeleteUserRequest request = new()
+        {
+            Id = idString
+        };
+
+        fixture.Repository
+            .Setup(r => r.GetByIdAsync(idString))
+            .ReturnsAsync(user);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.Delete(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<EmptyReply>(result);
+	}
+
+	[Fact]
+	public async Task Delete_Should_ThrowNullReferenceException_WhenUserDoesNotExist()
+	{
+		// Arrange
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
+
+        User user = new()
+        {
+            Id = id,
+            FirstName = "Ryuji",
+            LastName = "Sakamoto",
+            Email = "phantom_skull@thieves.com",
+            BirthDate = new DateTime(2000, 04, 06, 0, 0, 0, DateTimeKind.Utc),
+            Tickets = [
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    SeatNumber = 1,
+                    MovieSessionId = Guid.NewGuid(),
+                    UserId = id
+                }
+            ]
+        };
+
+        DeleteUserRequest request = new()
+        {
+            Id = Guid.NewGuid().ToString()
+        };
+
+        fixture.Repository
+            .Setup(r => r.GetByIdAsync(idString))
+            .ReturnsAsync(user);
+
+        // Act
+        var sut = fixture.CreateSut();
+        Task<EmptyReply> result() => sut.Delete(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        await Assert.ThrowsAnyAsync<NullReferenceException>(result);
 	}
 }

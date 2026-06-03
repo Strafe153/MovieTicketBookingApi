@@ -1,138 +1,241 @@
-﻿using FluentAssertions;
+﻿using Domain.Shared.Constants;
 using Moq;
+using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.Tickets;
 using MovieTicketBookingApi.Tests.Fixtures;
 using Xunit;
-using MovieSession = Domain.Entities.MovieSession;
 using Ticket = Domain.Entities.Ticket;
 
 namespace MovieTicketBookingApi.Tests;
 
-public class TicketsServiceTests : IClassFixture<TicketsServiceFixture>
+public class TicketsServiceTests(TicketsServiceFixture fixture) : IClassFixture<TicketsServiceFixture>
 {
-	private readonly TicketsServiceFixture _fixture;
-
-	public TicketsServiceTests(TicketsServiceFixture fixture)
-	{
-		_fixture = fixture;
-	}
-
 	[Fact]
 	public async Task GetAll_Should_ReturnGetAllTicketsReplyFromCache_WhenRequestIsValid()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<IList<Ticket>>(It.IsAny<string>()))
-			.Returns(_fixture.Tickets);
+        List<Ticket> tickets = [
+            new()
+            {
+                Id = Guid.NewGuid(),
+                SeatNumber = 1,
+                MovieSessionId = Guid.NewGuid(),
+                UserId = Guid.NewGuid()
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                SeatNumber = 6,
+                MovieSessionId = Guid.NewGuid(),
+                UserId = Guid.NewGuid()
+            }
+        ];
 
-		// Act
-		var result = await _fixture.TicketsService.GetAll(_fixture.GetPaginatedDataRequest, _fixture.ServerCallContext);
+        GetPaginatedDataRequest request = new()
+        {
+            PageNumber = 1,
+            PageSize = 5
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetAllTicketsReply>();
-		result.Tickets.Should().NotBeEmpty();
+        var cacheKey =
+            $"{CacheConstants.TicketsPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<IList<Ticket>>(cacheKey))
+            .Returns(tickets);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetAll(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Tickets);
+        Assert.Equal([1, 6], result.Tickets.Select(t => t.SeatNumber));
 	}
 
 	[Fact]
 	public async Task GetAll_Should_ReturnGetAllTicketsReplyFromRepository_WhenRequestIsValid()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<IList<Ticket>>(It.IsAny<string>()))
-			.Returns((IList<Ticket>)null!);
+        var pageNumber = 1;
+        var pageSize = 5;
 
-		_fixture.TicketsRepository
-			.Setup(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()))
-			.ReturnsAsync(_fixture.Tickets);
+        List<Ticket> tickets = [
+            new()
+            {
+                Id = Guid.NewGuid(),
+                SeatNumber = 1,
+                MovieSessionId = Guid.NewGuid(),
+                UserId = Guid.NewGuid()
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                SeatNumber = 6,
+                MovieSessionId = Guid.NewGuid(),
+                UserId = Guid.NewGuid()
+            }
+        ];
 
-		// Act
-		var result = await _fixture.TicketsService.GetAll(_fixture.GetPaginatedDataRequest, _fixture.ServerCallContext);
+        GetPaginatedDataRequest request = new()
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetAllTicketsReply>();
-		result.Tickets.Should().NotBeEmpty();
+        var cacheKey =
+            $"{CacheConstants.TicketsPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<IList<Ticket>>(cacheKey))
+            .Returns(tickets);
+
+        fixture.Repository
+            .Setup(h => h.GetAllAsync(pageNumber, pageSize))
+            .ReturnsAsync(tickets);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetAll(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Tickets);
+        Assert.Equal([1, 6], result.Tickets.Select(t => t.SeatNumber));
 	}
 
 	[Fact]
 	public async Task GetById_Should_ReturnGetTicketByIdReplyFromCache_WhenTicketExists()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<Ticket>(It.IsAny<string>()))
-			.Returns(_fixture.Ticket);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		// Act
-		var result = await _fixture.TicketsService.GetById(_fixture.GetTicketByIdRequest, _fixture.ServerCallContext);
+        Ticket ticket = new()
+        {
+            Id = id,
+            SeatNumber = 1,
+            MovieSessionId = Guid.NewGuid(),
+            UserId = Guid.NewGuid()
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetTicketByIdReply>();
+        GetTicketByIdRequest request = new()
+        {
+            Id = idString
+        };
+
+        var cacheKey = $"{CacheConstants.TicketsPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<Ticket>(cacheKey))
+            .Returns(ticket);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(idString, result.Id);
+        Assert.Equal(1, result.SeatNumber);
 	}
 
 	[Fact]
 	public async Task GetById_Should_ReturnGetTicketByIdReplyFromRepository_WhenTicketExists()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<Ticket>(It.IsAny<string>()))
-			.Returns((Ticket)null!);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		_fixture.TicketsRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync(_fixture.Ticket);
+        Ticket ticket = new()
+        {
+            Id = id,
+            SeatNumber = 1,
+            MovieSessionId = Guid.NewGuid(),
+            UserId = Guid.NewGuid()
+        };
 
-		// Act
-		var result = await _fixture.TicketsService.GetById(_fixture.GetTicketByIdRequest, _fixture.ServerCallContext);
+        GetTicketByIdRequest request = new()
+        {
+            Id = idString
+        };
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<GetTicketByIdReply>();
+        var cacheKey = $"{CacheConstants.TicketsPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<Ticket>(cacheKey))
+            .Returns((Ticket)null!);
+
+        fixture.Repository
+            .Setup(h => h.GetByIdAsync(idString))
+            .ReturnsAsync(ticket);
+
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(idString, result.Id);
+        Assert.Equal(1, result.SeatNumber);
 	}
 
 	[Fact]
 	public async Task GetById_Should_ThrowNullReferenceException_WhenTicketDoesNotExist()
 	{
 		// Arrange
-		_fixture.CacheHelper
-			.Setup(h => h.Get<Ticket>(It.IsAny<string>()))
-			.Returns((Ticket)null!);
+        var id = Guid.NewGuid();
+        var idString = id.ToString();
 
-		_fixture.TicketsRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync((Ticket)null!);
+        Ticket ticket = new()
+        {
+            Id = id,
+            SeatNumber = 1,
+            MovieSessionId = Guid.NewGuid(),
+            UserId = Guid.NewGuid()
+        };
 
-		// Act
-		var result = () => _fixture.TicketsService.GetById(_fixture.GetTicketByIdRequest, _fixture.ServerCallContext);
+        GetTicketByIdRequest request = new()
+        {
+            Id = Guid.NewGuid().ToString()
+        };
 
-		// Assert
-		await result.Should().ThrowAsync<NullReferenceException>();
-	}
+        var cacheKey = $"{CacheConstants.TicketsPrefix}:{request.Id}";
+
+        fixture.CacheHelper
+            .Setup(h => h.Get<Ticket>(cacheKey))
+            .Returns((Ticket)null!);
+
+        fixture.Repository
+            .Setup(h => h.GetByIdAsync(idString))
+            .ReturnsAsync(ticket);
+
+        // Act
+        var sut = fixture.CreateSut();
+        Task<GetTicketByIdReply> result() => sut.GetById(request, fixture.ServerCallContext.Object);
+
+        // Assert
+        await Assert.ThrowsAsync<NullReferenceException>(result);
+    }
 
 	[Fact]
-	public async Task Create_Should_ReturnCreateTicketReply_WhenMovieSessionExists()
+	public async Task Create_Should_ReturnCreateTicketReply_WhenRequestIsValid()
 	{
 		// Arrange
-		_fixture.MovieSessionsRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync(_fixture.MovieSession);
+        CreateTicketRequest request = new()
+        {
+            SeatNumber = 4,
+            MovieSessionId = Guid.NewGuid().ToString(),
+            UserId = Guid.NewGuid().ToString()
+        };
 
-		// Act
-		var result = await _fixture.TicketsService.Create(_fixture.CreateTicketRequest, _fixture.ServerCallContext);
+        // Act
+        var sut = fixture.CreateSut();
+        var result = await sut.Create(request, fixture.ServerCallContext.Object);
 
-		// Assert
-		result.Should().NotBeNull().And.BeOfType<CreateTicketReply>();
-	}
-
-	[Fact]
-	public async Task Create_Should_ThrowNullReferenceException_WhenMovieSessionDoesNotExist()
-	{
-		// Arrange
-		_fixture.MovieSessionsRepository
-			.Setup(r => r.GetByIdAsync(It.IsAny<string>()))
-			.ReturnsAsync((MovieSession)null!);
-
-		// Act
-		var result = () => _fixture.TicketsService.Create(_fixture.CreateTicketRequest, _fixture.ServerCallContext);
-
-		// Assert
-		await result.Should().ThrowAsync<NullReferenceException>();
+        // Assert
+        Assert.NotEmpty(result.Id);
+        Assert.Equal(4, result.SeatNumber);
 	}
 }

@@ -7,5 +7,5 @@ public class MovieSession
 	public Guid MovieId { get; set; }
 	public Guid MovieHallId { get; set; }
 	public bool IsFinished { get; set; }
-	public IList<Ticket> Tickets { get; set; } = default!;
+	public List<Ticket> Tickets { get; set; } = default!;
 }

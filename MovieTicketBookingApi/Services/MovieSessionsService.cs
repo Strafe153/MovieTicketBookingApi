@@ -1,10 +1,10 @@
-﻿using AutoMapper;
-using Domain.Interfaces.Helpers;
+﻿using Domain.Interfaces.Helpers;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using MovieTicketBookingApi.Mappings;
 using MovieTicketBookingApi.Protos.Shared.Empty;
 using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.MovieSessions;
@@ -18,20 +18,19 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
 {
 	private readonly IMovieSessionsRepository _repository;
 	private readonly ICacheHelper _cacheHelper;
-	private readonly IMapper _mapper;
 
 	public MovieSessionsService(
 		IMovieSessionsRepository repository,
-		ICacheHelper cacheHelper,
-		IMapper mapper)
+		ICacheHelper cacheHelper)
 	{
 		_repository = repository;
 		_cacheHelper = cacheHelper;
-		_mapper = mapper;
 	}
 
 	[AllowAnonymous]
-	public override async Task<GetAllMovieSessionsReply> GetAll(GetPaginatedDataRequest request, ServerCallContext context)
+	public override async Task<GetAllMovieSessionsReply> GetAll(
+		GetPaginatedDataRequest request,
+		ServerCallContext context)
 	{
 		var key = $"{CacheConstants.MovieSessionsPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
 		var movieSessions = _cacheHelper.Get<IList<MovieSession>>(key);
@@ -42,11 +41,13 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
 			_cacheHelper.Set(key, movieSessions);
 		}
 
-		return _mapper.Map<GetAllMovieSessionsReply>(movieSessions);
+		return movieSessions.ToReply();
 	}
 
 	[AllowAnonymous]
-	public override async Task<GetMovieSessionByIdReply> GetById(GetMovieSessionByIdRequest request, ServerCallContext context)
+	public override async Task<GetMovieSessionByIdReply> GetById(
+		GetMovieSessionByIdRequest request,
+		ServerCallContext context)
 	{
 		var key = $"{CacheConstants.MovieSessionsPrefix}:{request.Id}";
 		var movieSession = _cacheHelper.Get<MovieSession>(key);
@@ -57,24 +58,28 @@ public class MovieSessionsService : MovieSessions.MovieSessionsBase
 			_cacheHelper.Set(key, movieSession);
 		}
 
-		return _mapper.Map<GetMovieSessionByIdReply>(movieSession);
+		return movieSession.ToGetByIdReply();
 	}
 
-	public override async Task<CreateMovieSessionReply> Create(CreateMovieSessionRequest request, ServerCallContext context)
+	public override async Task<CreateMovieSessionReply> Create(
+		CreateMovieSessionRequest request,
+		ServerCallContext context)
 	{
-		var movieSession = _mapper.Map<MovieSession>(request);
-		movieSession.Id = Guid.NewGuid();
+		var movieSession = request.ToSession();
 
+		movieSession.Id = Guid.NewGuid();
 		await _repository.InsertAsync(movieSession);
 
-		return _mapper.Map<CreateMovieSessionReply>(movieSession);
+		return movieSession.ToCreateReply();
 	}
 
-	public override async Task<EmptyReply> Update(UpdateMovieSessionRequest request, ServerCallContext context)
+	public override async Task<EmptyReply> Update(
+		UpdateMovieSessionRequest request,
+		ServerCallContext context)
 	{
 		var movieSession = await GetByIdOrThrowAsync(request.Id);
 
-		_mapper.Map(request, movieSession);
+		request.Update(movieSession);
 		await _repository.UpdateAsync(movieSession);
 
 		return new EmptyReply();

@@ -4,7 +4,6 @@ package movie_ticket_booking_api.v1.ticket;
 
 option csharp_namespace = "MovieTicketBookingApi.Protos.V1.Tickets";
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "Protos/google/api/annotations.proto";
 import "Protos/Shared/paging.proto";
@@ -46,7 +45,6 @@ message GetTicketByIdRequest {
 
 message GetTicketByIdReply {
 	string id = 1;
-	google.protobuf.Timestamp date_time = 2;
 	int32 seat_number = 3;
 	string movie_session_id = 4;
 	string user_id = 5;
@@ -66,7 +64,6 @@ message CreateTicketRequest {
 
 message CreateTicketReply {
 	string id = 1;
-	google.protobuf.Timestamp date_time = 2;
 	int32 seat_number = 3;
 	string movie_session_id = 4;
 	string user_id = 5;
@@ -74,7 +71,6 @@ message CreateTicketReply {
 
 message Ticket {
 	string id = 1;
-	google.protobuf.Timestamp date_time = 2;
 	int32 seat_number = 3;
 	string movie_session_id = 4;
 	string user_id = 5;
