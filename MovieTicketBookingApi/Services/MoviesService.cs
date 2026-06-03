@@ -1,10 +1,10 @@
-﻿using AutoMapper;
-using Domain.Interfaces.Helpers;
+﻿using Domain.Interfaces.Helpers;
 using Domain.Interfaces.Repositories;
 using Domain.Shared.Constants;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using MovieTicketBookingApi.Mappings;
 using MovieTicketBookingApi.Protos.Shared.Empty;
 using MovieTicketBookingApi.Protos.Shared.Paging;
 using MovieTicketBookingApi.Protos.V1.Movies;
@@ -18,20 +18,19 @@ public class MoviesService : Movies.MoviesBase
 {
 	private readonly IMoviesRepository _repository;
 	private readonly ICacheHelper _cacheHelper;
-	private readonly IMapper _mapper;
 
 	public MoviesService(
 		IMoviesRepository repository,
-		ICacheHelper cacheHelper,
-		IMapper mapper)
+		ICacheHelper cacheHelper)
 	{
 		_repository = repository;
 		_cacheHelper = cacheHelper;
-		_mapper = mapper;
 	}
 
 	[AllowAnonymous]
-	public override async Task<GetAllMoviesReply> GetAll(GetPaginatedDataRequest request, ServerCallContext context)
+	public override async Task<GetAllMoviesReply> GetAll(
+		GetPaginatedDataRequest request,
+		ServerCallContext context)
 	{
 		var key = $"{CacheConstants.MoviesPrefix}:{request.PageNumber ??= 1}:{request.PageSize ??= 5}";
 		var movies = _cacheHelper.Get<IList<Movie>>(key);
@@ -42,11 +41,13 @@ public class MoviesService : Movies.MoviesBase
 			_cacheHelper.Set(key, movies);
 		}
 
-		return _mapper.Map<GetAllMoviesReply>(movies);
+		return movies.ToReply();
 	}
 
 	[AllowAnonymous]
-	public override async Task<GetMovieByIdReply> GetById(GetMovieByIdRequest request, ServerCallContext context)
+	public override async Task<GetMovieByIdReply> GetById(
+		GetMovieByIdRequest request,
+		ServerCallContext context)
 	{
 		var key = $"{CacheConstants.MoviesPrefix}:{request.Id}";
 		var movie = _cacheHelper.Get<Movie>(key);
@@ -57,30 +58,36 @@ public class MoviesService : Movies.MoviesBase
 			_cacheHelper.Set(key, movie);
 		}
 
-		return _mapper.Map<GetMovieByIdReply>(movie);
+		return movie.ToGetByIdReply();
 	}
 
-	public override async Task<CreateMovieReply> Create(CreateMovieRequest request, ServerCallContext context)
+	public override async Task<CreateMovieReply> Create(
+		CreateMovieRequest request,
+		ServerCallContext context)
 	{
-		var movie = _mapper.Map<Movie>(request);
-		movie.Id = Guid.NewGuid();
+		var movie = request.ToMovie();
 
+		movie.Id = Guid.NewGuid();
 		await _repository.InsertAsync(movie);
 
-		return _mapper.Map<CreateMovieReply>(movie);
+		return movie.ToCreateReply();
 	}
 
-	public override async Task<EmptyReply> Update(UpdateMovieRequest request, ServerCallContext context)
+	public override async Task<EmptyReply> Update(
+		UpdateMovieRequest request,
+		ServerCallContext context)
 	{
 		var movie = await GetByIdOrThrowAsync(request.Id);
 
-		_mapper.Map(request, movie);
+		request.Update(movie);
 		await _repository.UpdateAsync(movie);
 
 		return new EmptyReply();
 	}
 
-	public override async Task<EmptyReply> Delete(DeleteMovieRequest request, ServerCallContext context)
+	public override async Task<EmptyReply> Delete(
+		DeleteMovieRequest request,
+		ServerCallContext context)
 	{
 		await GetByIdOrThrowAsync(request.Id);
 		await _repository.DeleteAsync(request.Id);

@@ -9,7 +9,6 @@
 
 ## Dependencies
 * `AspNetCore.HealthChecks.UI.Client` - detailed health checks information
-* `AutoMapper.Extensions.Microsoft.DependencyInjection` - data mapping
 * `Couchbase.Extensions.DependencyInjection` - Couchbase DI integration
 * `CouchbaseNetClient` - Couchbase client support
 * `FluentEmail.Razor` - Razor email templates support

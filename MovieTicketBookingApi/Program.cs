@@ -1,4 +1,3 @@
-using MovieTicketBookingApi.AutoMapperProfiles;
 using MovieTicketBookingApi.Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +17,6 @@ builder.Services.AddMemoryCache();
 builder.Services.ConfigureQuartz();
 
 builder.Services.ConfigureFluentEmail(builder.Configuration);
-builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 
 builder.Services.ConfigureSwagger();
 
